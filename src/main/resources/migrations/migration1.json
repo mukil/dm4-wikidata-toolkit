@@ -1,0 +1,168 @@
+{
+    "topic_types": [
+        {
+            "value": "Wikidata Dump Setting: ISO Language Code",
+            "uri": "org.deepamehta.wikidata.dumpfile_language_iso",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Setting: Dumpfile Download",
+            "uri": "org.deepamehta.wikidata.dumpfile_download",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Setting: Import Persons",
+            "uri": "org.deepamehta.wikidata.dumpfile_persons",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Setting: Import Institutions",
+            "uri": "org.deepamehta.wikidata.dumpfile_institutions",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Setting: Import Cities",
+            "uri": "org.deepamehta.wikidata.dumpfile_cities",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Setting: Import Countries",
+            "uri": "org.deepamehta.wikidata.dumpfile_countries",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Setting: Parser timeout (sec)",
+            "uri": "org.deepamehta.wikidata.dumpfile_sec_parse",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Import",
+            "uri": "org.deepamehta.wikidata.dumpfile_import",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_language_iso",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_countries",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_cities",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_institutions",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_persons",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_sec_parse",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_download",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": true,
+                        "dm4.webclient.searchable_as_unit": true
+                    }
+                }
+            ]
+        }
+    ], "topics": [
+        {
+           "type_uri" : "org.deepamehta.wikidata.dumpfile_import",
+           "uri" : "org.deepamehta.wikidata.importer_default_config",
+           "childs": {
+               "org.deepamehta.wikidata.dumpfile_language_iso"  : "en",
+               "org.deepamehta.wikidata.dumpfile_sec_parse"     : "7",
+               "org.deepamehta.wikidata.dumpfile_download"      : false,
+               "org.deepamehta.wikidata.dumpfile_cities"        : true,
+               "org.deepamehta.wikidata.dumpfile_countries"     : true,
+               "org.deepamehta.wikidata.dumpfile_institutions"  : true,
+               "org.deepamehta.wikidata.dumpfile_persons"       : false
+               
+           }
+        }
+    ]
+}

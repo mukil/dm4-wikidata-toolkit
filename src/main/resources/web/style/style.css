@@ -1,0 +1,130 @@
+/** @author: mukil */
+
+.wikidata-page {
+    margin-top: 10px;
+}
+
+/** wikidata search-mode container in DM toolbar */
+.wikidata-search {
+    display: inline-block;
+}
+
+.wikidata-search-list {
+    padding-left: 0px;
+    margin-right: 20px;
+    margin-top: 20px;
+}
+
+.wikidata-search-spinner {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative; top: 45%;
+    text-align: center;
+}
+
+li.wikidata-item {
+    position: relative;
+}
+
+li.wikidata-item .entity-name {
+    cursor: pointer;
+    color: #006699;
+    display: inline-block;
+}
+
+li.wikidata-item .entity-icon {
+    display: inline-block;
+}
+
+li.wikidata-item .entity-icon img {
+    cursor: pointer;
+    vertical-align: bottom;
+    margin-right: 5px;
+}
+
+li.wikidata-item .entity-name:hover {
+    color: #990000;
+}
+
+li.wikidata-item .entity-description {
+    color: #484848;
+    font-size: 0.8em;
+    padding-left: 38px;
+    padding-right: 30px;
+}
+
+li.wikidata-item .create-type {
+    color: #990000;
+    font-weight: 900;
+    position: absolute;
+    padding: 5px;
+    top: -5px;
+    right: 20px;
+}
+
+li.wikidata-item .create-type:hover {
+    color: #339966;
+    cursor: pointer;
+}
+
+li.wikidata-item small {
+    /** float: right; */
+    color: #484848;
+}
+
+div.wikidata-query-info {
+    color: #990000;
+    margin-top: 10px;
+}
+
+#page-content .wikidata-loading {
+    margin-left: auto;
+    margin-right: auto;
+    position: absolute; top: 40%; right: 18%;
+    z-index: 1001;
+}
+
+#page-content .field-label.wikidata-relation-type {
+    color: #006699;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+#page-content .claim-listing,
+#page-content .related-values {
+    list-style-type: none;
+    padding-left: 5px;
+}
+
+#page-content div.field-value.license,
+#page-content .claim-listing div.property.entity-name {
+    color: #006699;
+}
+
+#page-content .related-values li.wikidata-item .entity-name {
+    color: #990000;
+}
+
+#page-content div.field-value.license:hover,
+#page-content .field-label.wikidata-relation-type:hover,
+#page-content .claim-listing div.property.entity-name:hover,
+#page-content .related-values li.wikidata-item .entity-name:hover {
+    text-decoration: underline;
+}
+
+#page-content .project-logo img {
+    position: relative;
+    left: -16px;
+    top: 10px;
+}
+
+p.wd-item-footer {
+    color: #484848;
+}
+
+p.wd-item-footer a:link {
+    color: #006699;
+}
+
+/** blue: #006699; green: 339966; red: 990000; grey: 484848; */
