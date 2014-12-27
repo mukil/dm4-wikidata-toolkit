@@ -1,10 +1,8 @@
 
-package org.deepamehta.plugins.wikidata.service;
+package org.deepamehta.plugins.wdtk.service;
 
-import de.deepamehta.core.RelatedAssociation;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.service.PluginService;
-import de.deepamehta.core.service.ResultList;
 
 /**
  * A very basic plugin to use the WDTK as DeepaMehta 4 plugin.

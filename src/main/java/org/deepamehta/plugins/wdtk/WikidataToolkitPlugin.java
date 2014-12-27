@@ -1,5 +1,5 @@
 
-package org.deepamehta.plugins.wikidata;
+package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.Association;
 import de.deepamehta.core.ChildTopics;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import org.deepamehta.plugins.wikidata.service.WikidataToolkitService;
+import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
 
@@ -56,6 +56,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     private final String WD_IMPORT_PERSONS = "org.deepamehta.wikidata.dumpfile_persons";
     private final String WD_IMPORT_SECONDS = "org.deepamehta.wikidata.dumpfile_sec_parse";
     private final String WD_IMPORT_DOWNLOAD = "org.deepamehta.wikidata.dumpfile_download";
+    private final String WD_IMPORT_DESCRIPTIONS = "org.deepamehta.wikidata.dumpfile_descriptions";
+    private final String WD_IMPORT_WEBSITES = "org.deepamehta.wikidata.dumpfile_websites";
+    private final String WD_IMPORT_COORDINATES = "org.deepamehta.wikidata.dumpfile_coordinates";
     
     // private final String WIKIDATA_PROPERTY_ENTITY_URL_PREFIX = "Property:";
     
@@ -143,8 +146,11 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean cities = childs.getBoolean(WD_IMPORT_CITIES);
         boolean countries = childs.getBoolean(WD_IMPORT_COUNTRIES);
         boolean noDownload = !childs.getBoolean(WD_IMPORT_DOWNLOAD);
-        WikidataEntityProcessor wikidataEntityProcessor = 
-            new WikidataEntityProcessor(dms, this, timeOut, persons, institutions, cities, countries, isoLanguageCode);
+        boolean descriptions = !childs.getBoolean(WD_IMPORT_DESCRIPTIONS);
+        boolean websites = !childs.getBoolean(WD_IMPORT_WEBSITES);
+        boolean geoCoordinates = !childs.getBoolean(WD_IMPORT_COORDINATES);
+        WikidataEntityProcessor wikidataEntityProcessor = new WikidataEntityProcessor(dms, this, timeOut, 
+                persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode);
         WikidataToolkitPlugin.this.startProcesssingWikidataDumpfile(wikidataEntityProcessor, noDownload);
     }
     

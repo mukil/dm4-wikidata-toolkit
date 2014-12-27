@@ -1,4 +1,4 @@
-package org.deepamehta.plugins.wikidata;
+package org.deepamehta.plugins.wdtk;
 
 /**
  *

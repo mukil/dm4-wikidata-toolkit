@@ -1,4 +1,4 @@
-package org.deepamehta.plugins.wikidata;
+package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
@@ -46,23 +46,28 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private final String DM_WEBBROWSER_URL      = "dm4.webbrowser.url";
     private final String DM_NOTES               = "dm4.contacts.notes";
 
-    // Helper
-    final Timer timer = Timer.getNamedTimer("WikidataPersonaProcessor");
-    int lastSeconds = 0;
-    int entityCount = 0;
-    // Settings
+    final Timer timer = Timer.getNamedTimer("WikidataEntityProcessor");
+    int lastSeconds = 0, entityCount = 0;
+    // seconds to parse the dumpfile
     int timeout;
+    // create or not create topics of type ..
     boolean doCountries = false;
     boolean doCities = false;
     boolean doInstitutions = false;
     boolean doPersons = false;
+    // store additional text values for items
+    boolean storeDescription = false;
+    boolean storeGeoCoordinates = false;
+    boolean storeWebsiteAddresses = false;
+    // ### language value
     String isoLanguageCode = "en";
     
     DeepaMehtaService dms;
     WikidataToolkitPlugin wdSearch;
 
     public WikidataEntityProcessor (DeepaMehtaService dms, WikidataToolkitPlugin wd, int timeout,
-        boolean persons, boolean institutions, boolean cities, boolean countries, String iso_lang) {
+        boolean persons, boolean institutions, boolean cities, boolean countries, boolean descriptions, 
+        boolean urls, boolean coordinates, String iso_lang) {
         this.timeout = timeout;
         this.dms = dms;
         this.wdSearch = wd;
@@ -100,7 +105,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         String description = getFirstDescription(itemDocument);
         // .. Memorizing any items english label in instance-variable
         if (label != null && !label.isEmpty()) itemsFirstLabel.put(itemId, label);
-        if (description != null && !description.isEmpty()) itemsFirstDescription.put(itemId, description);
+        if (description != null && !description.isEmpty() && storeDescription) {
+            itemsFirstDescription.put(itemId, description);
+        }
 
         // 1) Iterate over statement groups 
         if (itemDocument.getStatementGroups().size() > 0) {
@@ -143,6 +150,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 if (isInstanceOf || isSubclassOf) {
                     
                     for (Statement s : sg.getStatements()) {
+                        
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             JSONObject valueObject = mainSnakValue.accept(new ValueJsonConverter()).getJSONObject("value");
@@ -199,7 +207,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                         }
                     }
 
-                } else  if (isCoordinateOf) {
+                } else  if (isCoordinateOf && this.storeGeoCoordinates) {
                     
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
@@ -261,7 +269,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                         }
                     }
                 
-                } else  if (isWebsiteOf) {
+                } else  if (isWebsiteOf && this.storeWebsiteAddresses) {
                     
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {

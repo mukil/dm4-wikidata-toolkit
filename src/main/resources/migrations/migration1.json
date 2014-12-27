@@ -85,6 +85,48 @@
             ]
         },
         {
+            "value": "Wikidata Dump Setting: Store Geo Coordinates",
+            "uri": "org.deepamehta.wikidata.dumpfile_coordinates",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Setting: Store Website Addresses",
+            "uri": "org.deepamehta.wikidata.dumpfile_websites",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Dump Setting: Store Descriptions",
+            "uri": "org.deepamehta.wikidata.dumpfile_descriptions",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
             "value": "Wikidata Dump Setting: Parser timeout (sec)",
             "uri": "org.deepamehta.wikidata.dumpfile_sec_parse",
             "data_type_uri": "dm4.core.text",
@@ -129,6 +171,21 @@
                     "assoc_type_uri": "dm4.core.composition_def"
                 },
                 {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_descriptions",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_coordinates",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.dumpfile_websites",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
                     "child_type_uri": "org.deepamehta.wikidata.dumpfile_sec_parse",
                     "child_cardinality_uri": "dm4.core.one",
                     "assoc_type_uri": "dm4.core.composition_def"
@@ -157,6 +214,9 @@
                "org.deepamehta.wikidata.dumpfile_language_iso"  : "en",
                "org.deepamehta.wikidata.dumpfile_sec_parse"     : "7",
                "org.deepamehta.wikidata.dumpfile_download"      : false,
+               "org.deepamehta.wikidata.dumpfile_descriptions"  : true,
+               "org.deepamehta.wikidata.dumpfile_websites"      : true,
+               "org.deepamehta.wikidata.dumpfile_coordinates"   : false,
                "org.deepamehta.wikidata.dumpfile_cities"        : true,
                "org.deepamehta.wikidata.dumpfile_countries"     : true,
                "org.deepamehta.wikidata.dumpfile_institutions"  : true,

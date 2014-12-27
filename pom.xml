@@ -15,6 +15,13 @@
         <artifactId>deepamehta-plugin-parent</artifactId>
         <version>4.4</version>
     </parent>
+    
+    <repositories>
+        <repository>
+            <id>deepamehta-public-repository</id>
+            <url>http://m2.deepamehta.de</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -36,6 +43,11 @@
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-files</artifactId>
             <version>4.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.deepamehta</groupId>
+            <artifactId>dm44-wikidata-search</artifactId>
+            <version>0.0.4</version>
         </dependency>
         <dependency>
             <groupId>org.wikidata.wdtk</groupId>
@@ -117,7 +129,7 @@
                 <configuration>
                     <instructions>
                         <Bundle-Activator>
-                            org.deepamehta.plugins.wikidata.WikidataToolkitPlugin
+                            org.deepamehta.plugins.wdtk.WikidataToolkitPlugin
                         </Bundle-Activator>
                         <Bundle-SymbolicName>
                             org.deepamehta.wikidata-toolkit
