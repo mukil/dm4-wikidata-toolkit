@@ -47,6 +47,8 @@ public class WikidataEntityMap {
     final static String IS_SUBCLASS_OF               = "P279";
     final static String STARTED_AT                   = "P580";
     final static String ENDED_AT                     = "P582";
+    final static String GEO_COORDINATES              = "P625";
+    final static String IS_COUNTRY                   = "P17";
     
     
     
@@ -81,5 +83,10 @@ public class WikidataEntityMap {
     final static String IS_AFFILIATED_WITH           = "P1416";
     final static String IS_HEAD_OF_GOVERNMENT_OF     = "P6";
     final static String IS_POPULATION_OF             = "P1082";
+ 
+    // --- Institution related properties
     
+    final static String LOCATION_OF_FORMATION        = "P740";
+    final static String LOCATION_OF_HEADQUARTER      = "P159";
+
 }

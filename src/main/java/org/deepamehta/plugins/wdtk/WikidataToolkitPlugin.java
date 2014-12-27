@@ -146,9 +146,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean cities = childs.getBoolean(WD_IMPORT_CITIES);
         boolean countries = childs.getBoolean(WD_IMPORT_COUNTRIES);
         boolean noDownload = !childs.getBoolean(WD_IMPORT_DOWNLOAD);
-        boolean descriptions = !childs.getBoolean(WD_IMPORT_DESCRIPTIONS);
-        boolean websites = !childs.getBoolean(WD_IMPORT_WEBSITES);
-        boolean geoCoordinates = !childs.getBoolean(WD_IMPORT_COORDINATES);
+        boolean descriptions = childs.getBoolean(WD_IMPORT_DESCRIPTIONS);
+        boolean websites = childs.getBoolean(WD_IMPORT_WEBSITES);
+        boolean geoCoordinates = childs.getBoolean(WD_IMPORT_COORDINATES);
         WikidataEntityProcessor wikidataEntityProcessor = new WikidataEntityProcessor(dms, this, timeOut, 
                 persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode);
         WikidataToolkitPlugin.this.startProcesssingWikidataDumpfile(wikidataEntityProcessor, noDownload);

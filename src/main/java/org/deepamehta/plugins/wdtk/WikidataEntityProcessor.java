@@ -75,6 +75,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         this.doCities = cities;
         this.doInstitutions = institutions;
         this.doPersons = persons;
+        this.storeGeoCoordinates = coordinates;
+        this.storeWebsiteAddresses = urls;
+        this.storeDescription = descriptions;
         if (iso_lang != null) this.isoLanguageCode = iso_lang;
     }
 
