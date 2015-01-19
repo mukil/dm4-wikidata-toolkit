@@ -40,6 +40,13 @@ public class WikidataEntityMap {
     final static String COUNTRY_ITEM                 = "Q6256";
     
     
+    // --- Food related items
+    
+    final static String VEGETABLE                    = "Q11004";
+    final static String HERB                         = "Q207123";
+    final static String FUNGI                        = "Q764";
+    final static String FOOD_FRUIT                   = "Q3314483";
+    
     
     // --- Generic Wikidata Properties
     
@@ -88,5 +95,11 @@ public class WikidataEntityMap {
     
     final static String LOCATION_OF_FORMATION        = "P740";
     final static String LOCATION_OF_HEADQUARTER      = "P159";
+    
+    
+    // --- Food related properties
+    
+    final static String IS_INGREDIENT                = "Q10675206";
+    final static String IS_EDIBLE_MUSHROOM           = "Q654236";
 
 }

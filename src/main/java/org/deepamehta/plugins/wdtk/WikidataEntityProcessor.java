@@ -44,7 +44,10 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private final String DM_CITY                = "dm4.contacts.city";
     private final String DM_COUNTRY             = "dm4.contacts.country";
     private final String DM_WEBBROWSER_URL      = "dm4.webbrowser.url";
-    private final String DM_NOTES               = "dm4.contacts.notes";
+    private final String DM_CONTACT_NOTE        = "dm4.contacts.notes";
+    private final String DM_NOTE_TITLE          = "dm4.notes.title";
+    private final String DM_NOTE_DESCR          = "dm4.notes.text";
+    private final String DM_NOTE                = "dm4.notes.note";
 
     final Timer timer = Timer.getNamedTimer("WikidataEntityProcessor");
     int lastSeconds = 0, entityCount = 0;
@@ -95,6 +98,10 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     HashMap<String, String> all_cities = new HashMap<String, String>();
     HashMap<String, String> all_countries = new HashMap<String, String>();
     HashMap<String, String> all_websites = new HashMap<String, String>();
+    HashMap<String, String> all_herbs = new HashMap<String, String>();
+    HashMap<String, String> all_vegetables = new HashMap<String, String>();
+    HashMap<String, String> all_edible_fruits = new HashMap<String, String>();
+    HashMap<String, String> all_edible_fungis = new HashMap<String, String>();
     HashMap<String, double[]> all_coordinates = new HashMap<String, double[]>();
 
     @Override
@@ -203,6 +210,42 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                     if (doCountries && !all_countries.containsKey(itemId)) { // no organisation available
                                         // .. keep a reference to country items for counting (the one which has an english label)
                                         all_countries.put(itemId, label);
+                                    }
+
+                                // 2.5 current wikidata item is direct instanceOf|subclassOf "vegetable"
+                                } else if (referencedItemId.equals(WikidataEntityMap.VEGETABLE)) {
+                                    
+                                    // ### store item as being of some sort of "country"
+                                    if (!all_vegetables.containsKey(itemId)) { // no organisation available
+                                        // .. keep a reference to vegetable item for counting (the one which has an english label)
+                                        all_vegetables.put(itemId, label);
+                                    }
+                            
+                                // 2.6 current wikidata item is direct instanceOf|subclassOf "herb"
+                                } else if (referencedItemId.equals(WikidataEntityMap.HERB)) {
+                                    
+                                    // ### store item as being of some sort of "country"
+                                    if (!all_herbs.containsKey(itemId)) { // no organisation available
+                                        // .. keep a reference to herb items for counting (the one which has an english label)
+                                        all_herbs.put(itemId, label);
+                                    }
+
+                                // 2.7 current wikidata item is direct instanceOf|subclassOf "herb"
+                                } else if (referencedItemId.equals(WikidataEntityMap.FOOD_FRUIT)) {
+                                    
+                                    // ### store item as being of some sort of "country"
+                                    if (!all_edible_fruits.containsKey(itemId)) { // no organisation available
+                                        // .. keep a reference to fruit items for counting (the one which has an english label)
+                                        all_edible_fruits.put(itemId, label);
+                                    }
+                                    
+                                // 2.8 current wikidata item is direct instanceOf|subclassOf "herb"
+                                } else if (referencedItemId.equals(WikidataEntityMap.FUNGI)) {
+                                    
+                                    // ### store item as being of some sort of "country"
+                                    if (!all_edible_fungis.containsKey(itemId)) { // no organisation available
+                                        // .. keep a reference to fungi items for counting (the one which has an english label)
+                                        all_edible_fungis.put(itemId, label);
                                     }
                                 }
 
@@ -398,6 +441,25 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         return city;
     }
     
+    private Topic createNoteTopic(String name, String itemId) {
+        Topic city = null;
+        if (!alreadyExists(itemId)) {
+            ChildTopicsModel institutionComposite = new ChildTopicsModel();
+            institutionComposite.put(DM_NOTE_TITLE, name);
+            String descr = "";
+            if (itemsFirstDescription.get(itemId) != null) {
+                descr = "<p>"+itemsFirstDescription.get(itemId)+"</p>";
+                institutionComposite.put(DM_NOTE_DESCR, descr);
+            }
+            TopicModel cityModel = new TopicModel(
+                WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_NOTE, institutionComposite);
+            // ### set GeoCoordinate Facet via values in all_coordinates
+            city = dms.createTopic(cityModel);
+            wdSearch.assignToWikidataWorkspace(city);
+        }
+        return city;
+    }
+    
     private Topic createCountryTopic(String name, String itemId) {
         Topic country = null;
         if (!alreadyExists(itemId)) {
@@ -412,7 +474,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     
     private ChildTopicsModel addWikidataItemDescription(String itemId, String desc, 
             ChildTopicsModel comp) {
-        comp.put(DM_NOTES, desc + "<p class=\"wd-item-footer\">"
+        comp.put(DM_CONTACT_NOTE, desc + "<p class=\"wd-item-footer\">"
                 + "For more infos visit this items "
                 + "<a href=\"http://www.wikidata.org./entity/" + itemId 
                 + "\" target=\"_blank\" title=\"Wikidata page for this item\">"
@@ -535,16 +597,65 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 log.warning("Person Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
         }
+        
+        log.info(" ... " + all_herbs.size() + " herbs");
+        for (String itemId : all_herbs.keySet()) { // this might work but only after having read in the complete dump
+            String name = itemsFirstLabel.get(itemId); // ### use all_institutions
+            Topic person;
+            if (name != null) {
+                person = createNoteTopic(name, itemId);
+                wdSearch.assignToWikidataWorkspace(person);
+            } else {
+                log.warning("Herb Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
+            }
+        }
+        
+        log.info(" ... " + all_vegetables.size() + " vegetables");
+        for (String itemId : all_vegetables.keySet()) { // this might work but only after having read in the complete dump
+            String name = itemsFirstLabel.get(itemId); // ### use all_institutions
+            Topic person;
+            if (name != null) {
+                person = createNoteTopic(name, itemId);
+                wdSearch.assignToWikidataWorkspace(person);
+            } else {
+                log.warning("Vegetable Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
+            }
+        }
+        
+        log.info(" ... " + all_edible_fruits.size() + " fruits");
+        for (String itemId : all_edible_fruits.keySet()) { // this might work but only after having read in the complete dump
+            String name = itemsFirstLabel.get(itemId); // ### use all_institutions
+            Topic person;
+            if (name != null) {
+                person = createNoteTopic(name, itemId);
+                wdSearch.assignToWikidataWorkspace(person);
+            } else {
+                log.warning("Frui Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
+            }
+        }
+        
+        log.info(" ... " + all_edible_fungis.size() + " fungis");
+        for (String itemId : all_edible_fungis.keySet()) { // this might work but only after having read in the complete dump
+            String name = itemsFirstLabel.get(itemId); // ### use all_institutions
+            Topic person;
+            if (name != null) {
+                person = createNoteTopic(name, itemId);
+                wdSearch.assignToWikidataWorkspace(person);
+            } else {
+                log.warning("Fungi Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
+            }
+        }
 
         ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", 0);
         ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", 0);
         ResultList<RelatedTopic> cities = dms.getTopics("dm4.contacts.city", 0);
         ResultList<RelatedTopic> countries = dms.getTopics("dm4.contacts.country", 0);
+        ResultList<RelatedTopic> notes = dms.getTopics("dm4.notes.note", 0);
         if (personas != null && institutions != null && cities != null && countries != null) {
             log.info("DeepaMehta now recognizes " + this.all_persons.size() + " human beings"
                 + ", " + this.all_institutions.size() + " institutions, "
-                + this.all_cities.size() + " cities and " 
-                + this.all_countries.size() + " countries by name.");
+                + this.all_cities.size() + " cities, " 
+                + this.all_countries.size() + " countries and "+ notes.getTotalCount()+ " food items by name.");
         }
         log.info("Finished importing.");
         this.timer.stop();
