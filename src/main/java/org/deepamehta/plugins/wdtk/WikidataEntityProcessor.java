@@ -11,25 +11,27 @@ import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.ResultList;
 import java.util.HashMap;
 import java.util.logging.Logger;
-import org.json.JSONObject;
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocumentProcessor;
+import org.wikidata.wdtk.datamodel.interfaces.EntityIdValue;
+import org.wikidata.wdtk.datamodel.interfaces.GlobeCoordinatesValue;
 import org.wikidata.wdtk.datamodel.interfaces.ItemDocument;
 import org.wikidata.wdtk.datamodel.interfaces.MonolingualTextValue;
 import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument;
 import org.wikidata.wdtk.datamodel.interfaces.Statement;
 import org.wikidata.wdtk.datamodel.interfaces.StatementGroup;
+import org.wikidata.wdtk.datamodel.interfaces.StringValue;
+import org.wikidata.wdtk.datamodel.interfaces.TimeValue;
 import org.wikidata.wdtk.datamodel.interfaces.Value;
 import org.wikidata.wdtk.datamodel.interfaces.ValueSnak;
-import org.wikidata.wdtk.datamodel.json.ValueJsonConverter;
 import org.wikidata.wdtk.util.Timer;
 
 /**
- * @author bob
+ * @author Malte Rei&szlig;ig <malte@mikromedia.de>
  *
- * A simple class that processes EntityDocuments to identify personas in the wikidatawiki,
- * based on the EntityTimerProcessor of the WDTK written by Markus Kroetzsch. 
+ * A simple class that processes EntityDocuments to identify various classes of items in the
+ * wikidatawiki. Based on the EntityTimerProcessor from the WDTK examples written by Markus Kroetzsch.
  * Thanks for sharing. Honorable mentions go to jri for telling me about the 
- * ImportPackage notations which helped me to run the WDTK within OSGi.
+ * ImportPackage bundle notations which helped me to run the WDTK within our OSGi.
  */
 public class WikidataEntityProcessor implements EntityDocumentProcessor {
     
@@ -49,22 +51,25 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private final String DM_NOTE_DESCR          = "dm4.notes.text";
     private final String DM_NOTE                = "dm4.notes.note";
 
+    // setting: overall seconds and timer to parse the dumpfile
     final Timer timer = Timer.getNamedTimer("WikidataEntityProcessor");
     int lastSeconds = 0, entityCount = 0;
-    // seconds to parse the dumpfile
     int timeout;
-    // create or not create topics of type ..
+
+    // flags: create or not create topics of type ..
     boolean doCountries = false;
     boolean doCities = false;
     boolean doInstitutions = false;
     boolean doPersons = false;
-    // store additional text values for items
+
+    // flags: to store additional text values for items
     boolean storeDescription = false;
     boolean storeGeoCoordinates = false;
     boolean storeWebsiteAddresses = false;
-    // ### language value
-    String isoLanguageCode = "en";
-    
+
+    // setting: language default value
+    String isoLanguageCode = WikidataEntityMap.LANG_EN;
+
     DeepaMehtaService dms;
     WikidataToolkitPlugin wdSearch;
 
@@ -109,22 +114,22 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
 
         countEntity();
         
-        // 0) Get english label of current item
+        // 0) Get label and description of current item
         String itemId = itemDocument.getEntityId().getId();
         String label = getFirstLabel(itemDocument);
         String description = getFirstDescription(itemDocument);
-        // .. Memorizing any items english label in instance-variable
+        // .. so we memorize any non empty label or description for all (potential) items
         if (label != null && !label.isEmpty()) itemsFirstLabel.put(itemId, label);
         if (description != null && !description.isEmpty() && storeDescription) {
             itemsFirstDescription.put(itemId, description);
         }
 
-        // 1) Iterate over statement groups 
+        // 1) Iterate over items statement groups
         if (itemDocument.getStatementGroups().size() > 0) {
             
             for (StatementGroup sg : itemDocument.getStatementGroups()) {
                                 
-                // -- Inspect with which type of StatementGroup (Property) we deal here 
+                // -- Inspect with which type of StatementGroup (resp. Property) we deal here 
                 
                 boolean isInstanceOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_INSTANCE_OF);
                 boolean isSubclassOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_SUBCLASS_OF);
@@ -158,172 +163,120 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 // -- is instance | subclass of
                 
                 if (isInstanceOf || isSubclassOf) {
-                    
                     for (Statement s : sg.getStatements()) {
-                        
+                        // ### simply using the main snak value of this statement
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
-                            JSONObject valueObject = mainSnakValue.accept(new ValueJsonConverter()).getJSONObject("value");
-                            String mainSnakValueType = valueObject.getString("entity-type");
+                            String referencedItemId = "";
                             
                             // --- Statement involving other ITEMS
-                            if (mainSnakValueType.equals(WikidataEntityMap.WD_TYPE_ITEM)) {
-                                String referencedItemId = valueObject.getString("numeric-id");
+                            if (mainSnakValue instanceof EntityIdValue) {
                                 
-                                // 2.1 current wikidata item is direct instanceOf|subclassOf "human" or "person"
-                                if (referencedItemId.equals(WikidataEntityMap.HUMAN_ITEM) 
-                                    || referencedItemId.equals(WikidataEntityMap.PERSON_ITEM)) {
+                                EntityIdValue itemIdValue = (EntityIdValue) mainSnakValue;
 
-                                    if (doPersons && !all_persons.containsKey(itemId)) { // no persona available
-                                        // .. keep a reference to person items for counting (the one which has an english label)
-                                        all_persons.put(itemId, label);
-                                    }
+                                if (itemIdValue.getEntityType().equals(EntityIdValue.ET_ITEM)) {
                                     
-                                // 2.2 current wikidata item is direct instanceOf|subclassOf "university", "company" or "organisation"
-                                } else if (referencedItemId.equals(WikidataEntityMap.COMPANY_ITEM)
-                                    || referencedItemId.equals(WikidataEntityMap.UNIVERSITY_ITEM)
-                                    || referencedItemId.equals(WikidataEntityMap.ORGANISATION_ITEM)
-                                    || referencedItemId.equals(WikidataEntityMap.COLLEGIATE_UNIVERSITY_ITEM)) { // = often subclass of "university" items
-                                    
-                                    // ### store item as being of some sort of "organisation"
-                                    if (doInstitutions && !all_institutions.containsKey(itemId)) { // no organisation available
-                                        // .. keep a reference to institution items for counting (the one which has an english label)
-                                        all_institutions.put(itemId, label);
-                                    }
+                                    referencedItemId = itemIdValue.getId();
 
-                                // 2.3 current wikidata item is direct instanceOf|subclassOf "city", "metro" or "capital"
-                                } else if (referencedItemId.equals(WikidataEntityMap.CITY_ITEM)
-                                    || referencedItemId.equals(WikidataEntityMap.METROPOLIS_ITEM)
-                                    || referencedItemId.equals(WikidataEntityMap.CAPITAL_CITY_ITEM)) {
-                                    
-                                    // ### store item as being of some sort of "city"
-                                    if (doCities && !all_cities.containsKey(itemId)) { // no organisation available
-                                        // .. keep a reference to city items for counting (the one which has an english label)
-                                        all_cities.put(itemId, label);
-                                    }
+                                    // 2.1 current wikidata item is direct instanceOf|subclassOf "human" or "person"
+                                    if (referencedItemId.equals(WikidataEntityMap.HUMAN_ITEM)
+                                        || referencedItemId.equals(WikidataEntityMap.PERSON_ITEM)) {
+                                        if (doPersons && !all_persons.containsKey(itemId)) all_persons.put(itemId, label);
 
-                                // 2.4 current wikidata item is direct instanceOf|subclassOf "country" or "sovereing state"
-                                } else if (referencedItemId.equals(WikidataEntityMap.COUNTRY_ITEM)
-                                    || referencedItemId.equals(WikidataEntityMap.SOVEREIGN_STATE_ITEM)) {
-                                    
-                                    // ### store item as being of some sort of "country"
-                                    if (doCountries && !all_countries.containsKey(itemId)) { // no organisation available
-                                        // .. keep a reference to country items for counting (the one which has an english label)
-                                        all_countries.put(itemId, label);
-                                    }
+                                    // 2.2 current wikidata item is direct instanceOf|subclassOf "university", "company" or "organisation"
+                                    } else if (referencedItemId.equals(WikidataEntityMap.COMPANY_ITEM)
+                                        || referencedItemId.equals(WikidataEntityMap.UNIVERSITY_ITEM)
+                                        || referencedItemId.equals(WikidataEntityMap.ORGANISATION_ITEM)
+                                        || referencedItemId.equals(WikidataEntityMap.COLLEGIATE_UNIVERSITY_ITEM)) { // = often subclass of "university" items
+                                        if (doInstitutions && !all_institutions.containsKey(itemId)) all_institutions.put(itemId, label);
 
-                                // 2.5 current wikidata item is direct instanceOf|subclassOf "vegetable"
-                                } else if (referencedItemId.equals(WikidataEntityMap.VEGETABLE)) {
-                                    
-                                    // ### store item as being of some sort of "country"
-                                    if (!all_vegetables.containsKey(itemId)) { // no organisation available
-                                        // .. keep a reference to vegetable item for counting (the one which has an english label)
-                                        all_vegetables.put(itemId, label);
-                                    }
-                            
-                                // 2.6 current wikidata item is direct instanceOf|subclassOf "herb"
-                                } else if (referencedItemId.equals(WikidataEntityMap.HERB)) {
-                                    
-                                    // ### store item as being of some sort of "country"
-                                    if (!all_herbs.containsKey(itemId)) { // no organisation available
-                                        // .. keep a reference to herb items for counting (the one which has an english label)
-                                        all_herbs.put(itemId, label);
+                                    // 2.3 current wikidata item is direct instanceOf|subclassOf "city", "metro" or "capital"
+                                    } else if (referencedItemId.equals(WikidataEntityMap.CITY_ITEM)
+                                        || referencedItemId.equals(WikidataEntityMap.METROPOLIS_ITEM)
+                                        || referencedItemId.equals(WikidataEntityMap.CAPITAL_CITY_ITEM)) {
+                                        if (doCities && !all_cities.containsKey(itemId)) all_cities.put(itemId, label);
+
+                                    // 2.4 current wikidata item is direct instanceOf|subclassOf "country" or "sovereing state"
+                                    } else if (referencedItemId.equals(WikidataEntityMap.COUNTRY_ITEM)
+                                        || referencedItemId.equals(WikidataEntityMap.SOVEREIGN_STATE_ITEM)) {
+                                        if (doCountries && !all_countries.containsKey(itemId)) all_countries.put(itemId, label);
+
+                                    // 2.5 current wikidata item is direct instanceOf|subclassOf "vegetable"
+                                    } else if (referencedItemId.equals(WikidataEntityMap.VEGETABLE)) {
+                                        if (!all_vegetables.containsKey(itemId)) all_vegetables.put(itemId, label);
+
+                                    // 2.6 current wikidata item is direct instanceOf|subclassOf "herb"
+                                    } else if (referencedItemId.equals(WikidataEntityMap.HERB)) {
+                                        if (!all_herbs.containsKey(itemId)) all_herbs.put(itemId, label);
+
+                                    // 2.7 current wikidata item is direct instanceOf|subclassOf "herb"
+                                    } else if (referencedItemId.equals(WikidataEntityMap.FOOD_FRUIT)) {
+                                        if (!all_edible_fruits.containsKey(itemId)) all_edible_fruits.put(itemId, label);
+
+                                    // 2.8 current wikidata item is direct instanceOf|subclassOf "herb"
+                                    } else if (referencedItemId.equals(WikidataEntityMap.FUNGI)) {
+                                        if (!all_edible_fungis.containsKey(itemId)) all_edible_fungis.put(itemId, label);
                                     }
 
-                                // 2.7 current wikidata item is direct instanceOf|subclassOf "herb"
-                                } else if (referencedItemId.equals(WikidataEntityMap.FOOD_FRUIT)) {
-                                    
-                                    // ### store item as being of some sort of "country"
-                                    if (!all_edible_fruits.containsKey(itemId)) { // no organisation available
-                                        // .. keep a reference to fruit items for counting (the one which has an english label)
-                                        all_edible_fruits.put(itemId, label);
-                                    }
-                                    
-                                // 2.8 current wikidata item is direct instanceOf|subclassOf "herb"
-                                } else if (referencedItemId.equals(WikidataEntityMap.FUNGI)) {
-                                    
-                                    // ### store item as being of some sort of "country"
-                                    if (!all_edible_fungis.containsKey(itemId)) { // no organisation available
-                                        // .. keep a reference to fungi items for counting (the one which has an english label)
-                                        all_edible_fungis.put(itemId, label);
-                                    }
                                 }
-
                             }
+
                         }
                     }
 
                 } else  if (isCoordinateOf && this.storeGeoCoordinates) {
-                    
                     for (Statement s : sg.getStatements()) {
+                        // ### simply using the main snak value of this statement
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
-                            JSONObject valueObject = mainSnakValue.accept(new ValueJsonConverter()).getJSONObject("value");
-                            double longitude = valueObject.getDouble("longitude");
-                            double latitude = valueObject.getDouble("latitude");
-                            // --- Statement involving globe-coordinates
-                            if (longitude != -1 && latitude != -1) {
-                                double coordinates[] = {longitude, latitude}; 
-                                // String string_value = valueObject.getString("numeric-id");
-                                if (!all_coordinates.containsKey(itemId)) { // no persona available
-                                    // .. keep a reference to person items for counting (the one which has an english label)
-                                    all_coordinates.put(itemId, coordinates);
+                            if (mainSnakValue instanceof GlobeCoordinatesValue) {
+                                GlobeCoordinatesValue coordinateValues = (GlobeCoordinatesValue) mainSnakValue;
+                                double longitude = coordinateValues.getLatitude();
+                                double latitude = coordinateValues.getLongitude();
+                                // note: coordinateValues.getGlobe().contains("Q2) == Planet Earth
+                                log.info("##### Parsed geo-coordinates " + coordinateValues.getLatitude()
+                                        + ", " + coordinateValues.getLongitude());
+                                if (longitude != -1 && latitude != -1) {
+                                    double coordinates[] = {longitude, latitude};
+                                    if (!all_coordinates.containsKey(itemId)) {
+                                        all_coordinates.put(itemId, coordinates);
+                                    }
                                 }
                             }
                         }
                     }
 
-                } else  if (isBirthDateOf) {
-                    
+                } else  if (isBirthDateOf || isDeathDateOf) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
-                            JSONObject valueObject = mainSnakValue.accept(new ValueJsonConverter()).getJSONObject("value");
-                            String date = valueObject.getString("time"); // ### respect calendermodel
-                            // log.info("Item is dead since: " + date); // Access DataValueModel..
-                        }
-                    }
-
-                } else  if (isDeathDateOf) {
-                    
-                    for (Statement s : sg.getStatements()) {
-                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
-                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
-                            JSONObject valueObject = mainSnakValue.accept(new ValueJsonConverter()).getJSONObject("value");
-                            String date = valueObject.getString("time"); // ### respect calendermodel
-                            // log.info("Item is dead since: " + date);
+                            if (mainSnakValue instanceof TimeValue) {
+                                TimeValue dateValue = (TimeValue) mainSnakValue; // ### respect calendermodel
+                                log.info("### Parsed time value: " + dateValue.getDay() + "." 
+                                        + dateValue.getMonth() + " " + dateValue.getYear());
+                            }
                         }
                     }
                 
-                } else  if (isGivenNameOf) {
-                    
+                } else  if (isGivenNameOf || isSurnameOf) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
-                            JSONObject valueObject = mainSnakValue.accept(new ValueJsonConverter()).getJSONObject("value");
-                            // ## ARE of type ITEM! log.info("Items given name is: " + valueObject);
-                        }
-                    }
-                
-                } else  if (isSurnameOf) {
-                    
-                    for (Statement s : sg.getStatements()) {
-                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
-                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
-                            JSONObject valueObject = mainSnakValue.accept(new ValueJsonConverter()).getJSONObject("value");
-                            // ## ARE of type ITEM! log.info("Items surname is : " + valueObject);
+                            if (mainSnakValue instanceof EntityIdValue) { // ### is item id!
+                                EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                log.fine("######## Parsed name is item with ID : " + nameId);
+                            }
                         }
                     }
                 
                 } else  if (isWebsiteOf && this.storeWebsiteAddresses) {
-                    
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
-                            if (mainSnakValue.accept(new ValueJsonConverter()).has("value")) {
-                                String url = mainSnakValue.accept(new ValueJsonConverter()).getString("value");
-                                if ((url != null && !url.isEmpty())) {
-                                    all_websites.put(itemId, url);
+                            if (mainSnakValue instanceof StringValue) {
+                                StringValue urlValue = (StringValue) mainSnakValue;
+                                if ((urlValue.getString() != null && !urlValue.getString().isEmpty())) {
+                                    all_websites.put(itemId, urlValue.getString());
                                 }
                             }
                         }
@@ -341,9 +294,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private String getFirstLabel(ItemDocument itemDocument) {
         MonolingualTextValue value = null;
         if (itemDocument.getLabels().size() > 1) {
-            if (itemDocument.getLabels().containsKey(WikidataEntityMap.LANG_EN)) {
-                value = itemDocument.getLabels().get(WikidataEntityMap.LANG_EN);
-            } else { // if no english label avaiable, take first label available
+            if (itemDocument.getLabels().containsKey(this.isoLanguageCode)) {
+                value = itemDocument.getLabels().get(this.isoLanguageCode);
+            } else { // if no label (in configured language) is available, we take first available
                 for (String key : itemDocument.getLabels().keySet()) {
                     value = itemDocument.getLabels().get(key);
                     break;
@@ -361,9 +314,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private String getFirstDescription(ItemDocument itemDocument) {
         MonolingualTextValue value = null;
         if (itemDocument.getLabels().size() > 1) {
-            if (itemDocument.getDescriptions().containsKey(WikidataEntityMap.LANG_EN)) {
-                value = itemDocument.getDescriptions().get(WikidataEntityMap.LANG_EN);
-            } else { // if no english label avaiable, take first label available
+            if (itemDocument.getDescriptions().containsKey(this.isoLanguageCode)) {
+                value = itemDocument.getDescriptions().get(this.isoLanguageCode);
+            } else { // if no descr (in configured language) is available, we take first available
                 for (String key : itemDocument.getDescriptions().keySet()) {
                     value = itemDocument.getDescriptions().get(key);
                     break;
@@ -381,26 +334,20 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private Topic createPersonTopic(String firstName, String lastName, String itemId) {
         Topic person = null;
         if (!alreadyExists(itemId)) {
-            ChildTopicsModel personComposite = new ChildTopicsModel();
-            personComposite.put(DM_PERSON_NAME, new ChildTopicsModel()
-                .put(DM_PERSON_FIRST_NAME, firstName)
-                .put(DM_PERSON_LAST_NAME, lastName)
+            ChildTopicsModel personComposite = new ChildTopicsModel().put(DM_PERSON_NAME, new ChildTopicsModel()
+                .put(DM_PERSON_FIRST_NAME, firstName).put(DM_PERSON_LAST_NAME, lastName)
             );
-            // add "official" website to institution if available
-            if (all_websites.containsKey(itemId)) {
-                personComposite.add(DM_WEBBROWSER_URL, 
-                    new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
-            }
-            String desc = "";
-            if (itemsFirstDescription.get(itemId) != null) {
-                desc = "<p>"+itemsFirstDescription.get(itemId)+"</p>";
-            }
-            addWikidataItemDescription(itemId, desc, personComposite);
+            // add "official website" to person if available
+            addWebbrowserURLAsChildTopic(personComposite, itemId);
+            // add item description to person
+            String description = itemsFirstDescription.get(itemId);
+            description = (description != null) ? "<p>"+description+"</p>" : "";
+            addWikidataItemDescription(itemId, description, personComposite);
+            // build up model
             TopicModel personModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
             person = dms.createTopic(personModel);
             wdSearch.assignToWikidataWorkspace(person);
-            // log.info("> Created person Topic: " + firstName + " " + lastName);
         }
         return person;
     }
@@ -410,16 +357,13 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         if (!alreadyExists(itemId)) {
             ChildTopicsModel institutionComposite = new ChildTopicsModel();
             institutionComposite.put(DM_INSTITUTION_NAME, name);
-            if (all_websites.containsKey(itemId)) {
-                institutionComposite.add(DM_WEBBROWSER_URL, 
-                    new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
-            }
-            // add "official" website to institution if available
-            String desc = "";
-            if (itemsFirstDescription.get(itemId) != null) {
-                desc = "<p>"+itemsFirstDescription.get(itemId)+"</p>";
-            }
-            addWikidataItemDescription(itemId, desc, institutionComposite);
+            // add "official website" to institution if available
+            addWebbrowserURLAsChildTopic(institutionComposite, itemId);
+            // add item description to institution
+            String description = itemsFirstDescription.get(itemId);
+            description = (description != null) ? "<p>"+description+"</p>" : "";
+            addWikidataItemDescription(itemId, description, institutionComposite);
+            // build up model
             TopicModel institutionModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
             // ### set GeoCoordinate Facet via values in all_coordinates
@@ -429,6 +373,13 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         return institution;
     }
     
+    private void addWebbrowserURLAsChildTopic(ChildTopicsModel composite, String itemId) {
+        if (all_websites.containsKey(itemId)) {
+            composite.add(DM_WEBBROWSER_URL,
+                new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
+        }
+    }
+
     private Topic createCityTopic(String name, String itemId) {
         Topic city = null;
         if (!alreadyExists(itemId)) {
@@ -472,8 +423,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         return country;
     }
     
-    private ChildTopicsModel addWikidataItemDescription(String itemId, String desc, 
-            ChildTopicsModel comp) {
+    private ChildTopicsModel addWikidataItemDescription(String itemId, String desc, ChildTopicsModel comp) {
         comp.put(DM_CONTACT_NOTE, desc + "<p class=\"wd-item-footer\">"
                 + "For more infos visit this items "
                 + "<a href=\"http://www.wikidata.org./entity/" + itemId 
@@ -554,7 +504,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         log.info(" ... " + all_cities.size() + " cities");
         for (String itemId : all_cities.keySet()) {
-            String cityName = itemsFirstLabel.get(itemId); // ### all_cities
+            String cityName = itemsFirstLabel.get(itemId);
             Topic city = null;
             if (cityName != null) {
                 city = createCityTopic(cityName, itemId);
@@ -565,7 +515,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
 
         log.info(" ... " + all_countries.size() + " countries");
         for (String itemId : all_countries.keySet()) {
-            String countryName = itemsFirstLabel.get(itemId); // ### all_countries
+            String countryName = itemsFirstLabel.get(itemId);
             Topic country;
             if (countryName != null) {
                 country = createCountryTopic(countryName, itemId);
@@ -576,7 +526,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         log.info(" ... " + all_institutions.size() + " institutions");
         for (String itemId : all_institutions.keySet()) {
-            String instName = itemsFirstLabel.get(itemId); // ### all_institutions
+            String instName = itemsFirstLabel.get(itemId);
             Topic institution;
             if (instName != null) {
                 institution = createInstitutionTopic(instName, itemId);
@@ -600,11 +550,11 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         log.info(" ... " + all_herbs.size() + " herbs");
         for (String itemId : all_herbs.keySet()) { // this might work but only after having read in the complete dump
-            String name = itemsFirstLabel.get(itemId); // ### use all_institutions
-            Topic person;
+            String name = itemsFirstLabel.get(itemId);
+            Topic herbs;
             if (name != null) {
-                person = createNoteTopic(name, itemId);
-                wdSearch.assignToWikidataWorkspace(person);
+                herbs = createNoteTopic(name, itemId);
+                wdSearch.assignToWikidataWorkspace(herbs);
             } else {
                 log.warning("Herb Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
@@ -612,11 +562,11 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         log.info(" ... " + all_vegetables.size() + " vegetables");
         for (String itemId : all_vegetables.keySet()) { // this might work but only after having read in the complete dump
-            String name = itemsFirstLabel.get(itemId); // ### use all_institutions
-            Topic person;
+            String name = itemsFirstLabel.get(itemId);
+            Topic vegetables;
             if (name != null) {
-                person = createNoteTopic(name, itemId);
-                wdSearch.assignToWikidataWorkspace(person);
+                vegetables = createNoteTopic(name, itemId);
+                wdSearch.assignToWikidataWorkspace(vegetables);
             } else {
                 log.warning("Vegetable Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
@@ -624,23 +574,23 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         log.info(" ... " + all_edible_fruits.size() + " fruits");
         for (String itemId : all_edible_fruits.keySet()) { // this might work but only after having read in the complete dump
-            String name = itemsFirstLabel.get(itemId); // ### use all_institutions
-            Topic person;
+            String name = itemsFirstLabel.get(itemId);
+            Topic fruits;
             if (name != null) {
-                person = createNoteTopic(name, itemId);
-                wdSearch.assignToWikidataWorkspace(person);
+                fruits = createNoteTopic(name, itemId);
+                wdSearch.assignToWikidataWorkspace(fruits);
             } else {
-                log.warning("Frui Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
+                log.warning("Fruit Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
         }
         
         log.info(" ... " + all_edible_fungis.size() + " fungis");
         for (String itemId : all_edible_fungis.keySet()) { // this might work but only after having read in the complete dump
-            String name = itemsFirstLabel.get(itemId); // ### use all_institutions
-            Topic person;
+            String name = itemsFirstLabel.get(itemId);
+            Topic fungis;
             if (name != null) {
-                person = createNoteTopic(name, itemId);
-                wdSearch.assignToWikidataWorkspace(person);
+                fungis = createNoteTopic(name, itemId);
+                wdSearch.assignToWikidataWorkspace(fungis);
             } else {
                 log.warning("Fungi Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
