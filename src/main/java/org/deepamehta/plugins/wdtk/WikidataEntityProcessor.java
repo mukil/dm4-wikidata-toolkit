@@ -140,17 +140,19 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 boolean isDeathDateOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DEAD_SINCE);
                 boolean isWebsiteOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_OFFICIAL_WEBSITE_OF);
                 
-                /** boolean isPseudonymOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_PSEUDONYM_OF);
-                boolean isAlmaMaterOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_ALMA_MATER_OF);
-                boolean isStudentOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_STUDENT_OF_PERSON);
-                boolean isDoctoralAdvisorOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DOCTORAL_ADVISOR_OF);
-                boolean isDoctoralStudentOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DOCTORAL_STUDENT_OF); 
+                // 
                 boolean isMemberOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_MEMBER_OF);
                 boolean isCitizenOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_CITIZEN_OF);
                 boolean isEmployeeOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_EMPLOYEE_OF);
                 boolean isPartyMemberOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_PARTY_MEMBER_OF);
                 boolean isOfficiallyResidingAt = sg.getProperty().getId().equals(WikidataEntityMap.IS_OFFICIALLY_RESIDING_AT);
+                // boolean isAlmaMaterOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_ALMA_MATER_OF);
+                boolean isStudentOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_STUDENT_OF_PERSON);
+                boolean isDoctoralAdvisorOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DOCTORAL_ADVISOR_OF);
+                boolean isDoctoralStudentOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DOCTORAL_STUDENT_OF);
                 boolean isAffiliatedWith = sg.getProperty().getId().equals(WikidataEntityMap.IS_AFFILIATED_WITH);
+
+                /** boolean isPseudonymOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_PSEUDONYM_OF);
                 boolean isOpenResearchIdOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_OPEN_RESEARCH_ID_OF);
                 boolean isNotableWorkOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_NOTABLE_WORK_OF); **/
                 /** if (isSubclassOf && classRecord == null) {
@@ -224,7 +226,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                         }
                     }
 
-                } else  if (isCoordinateOf && this.storeGeoCoordinates) {
+                } else if (isCoordinateOf && this.storeGeoCoordinates) {
                     for (Statement s : sg.getStatements()) {
                         // ### simply using the main snak value of this statement
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
@@ -234,7 +236,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 double longitude = coordinateValues.getLatitude();
                                 double latitude = coordinateValues.getLongitude();
                                 // note: coordinateValues.getGlobe().contains("Q2) == Planet Earth
-                                log.info("##### Parsed geo-coordinates " + coordinateValues.getLatitude()
+                                log.fine("### NEW: Parsed geo-coordinates " + coordinateValues.getLatitude()
                                         + ", " + coordinateValues.getLongitude());
                                 if (longitude != -1 && latitude != -1) {
                                     double coordinates[] = {longitude, latitude};
@@ -246,30 +248,30 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                         }
                     }
 
-                } else  if (isBirthDateOf || isDeathDateOf) {
+                } else if (isBirthDateOf || isDeathDateOf) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof TimeValue) {
                                 TimeValue dateValue = (TimeValue) mainSnakValue; // ### respect calendermodel
-                                log.info("### Parsed time value: " + dateValue.getDay() + "." 
+                                log.fine("### NEW: Parsed time value: " + dateValue.getDay() + "."
                                         + dateValue.getMonth() + " " + dateValue.getYear());
                             }
                         }
                     }
                 
-                } else  if (isGivenNameOf || isSurnameOf) {
+                } else if (isGivenNameOf || isSurnameOf) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof EntityIdValue) { // ### is item id!
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
-                                log.fine("######## Parsed name is item with ID : " + nameId);
+                                log.fine("### NEW: Parsed name is item with ID : " + nameId);
                             }
                         }
                     }
                 
-                } else  if (isWebsiteOf && this.storeWebsiteAddresses) {
+                } else if (isWebsiteOf && this.storeWebsiteAddresses) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
@@ -281,7 +283,96 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                             }
                         }
                     }
+
+                } else if (isEmployeeOf) {
+                    // some professional person to organisation relationship
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                // check on all already imported wikidata items
+                                Topic entity = getWikidataItemByEntityId(nameId);
+                                if (entity != null) log.info("  DEBUG: Matched nameId to an existing Wikidata Topic by URI!");
+                                // check on all currently to be imported wikidata items (in memory)
+                                String relatedLabel = getItemLabelByEntityId(nameId);
+                                String affiliatedWith = (entity != null) ? entity.getSimpleValue().toString() : (relatedLabel != null) ? relatedLabel : nameId.getId();
+                                if (!nameId.getId().equals(affiliatedWith)) {
+                                    log.info("#### NEW Employee Connection: " +getFirstLabel(itemDocument)+ " is affiliated with \"" + affiliatedWith + "\"");   
+                                } else {
+                                    log.info("(should fetch first related label of ... "+ nameId.getId()+") in lang=" + isoLanguageCode);
+                                }
+                            }
+                        }
+                    }
+
+                } else if (isMemberOf || isPartyMemberOf || isAffiliatedWith) {
+                    // some person to institution / person? relationship
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                // check on all already imported wikidata items
+                                Topic entity = getWikidataItemByEntityId(nameId);
+                                if (entity != null) log.info("  DEBUG: Matched nameId to an existing Wikidata Topic by URI!");
+                                // check on all currently to be imported wikidata items (in memory)
+                                String relatedLabel = getItemLabelByEntityId(nameId);
+                                String affiliatedWith = (entity != null) ? entity.getSimpleValue().toString() : (relatedLabel != null) ? relatedLabel : nameId.getId();
+                                if (!nameId.getId().equals(affiliatedWith)) {
+                                    log.info("#### NEW Member Connection: " +getFirstLabel(itemDocument)+ " is affiliated with \"" + affiliatedWith + "\"");   
+                                } else {
+                                    log.info("(should fetch first related label of ... "+ nameId.getId()+") in lang=" + isoLanguageCode);
+                                }
+                            }
+                        }
+                    }
+
+                } else if (isCitizenOf || isOfficiallyResidingAt) {
+                    // some person to city/country relationship
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                // check on all already imported wikidata items
+                                Topic entity = getWikidataItemByEntityId(nameId);
+                                if (entity != null) log.info("  DEBUG: Matched nameId to an existing Wikidata Topic by URI!");
+                                // check on all currently to be imported wikidata items (in memory)
+                                String relatedLabel = getItemLabelByEntityId(nameId);
+                                String livingAt = (entity != null) ? entity.getSimpleValue().toString() : (relatedLabel != null) ? relatedLabel : nameId.getId();
+                                if (!nameId.getId().equals(livingAt)) {
+                                    log.info("#### TODO New living at connection: " + getFirstLabel(itemDocument) + " living at " + livingAt);   
+                                } else {
+                                    log.info("(should fetch first related label of ... "+ nameId.getId()+") in lang=" + isoLanguageCode);
+                                }
+                            }
+                        }
+                    }
+
+                } else if (isDoctoralAdvisorOf || isDoctoralStudentOf || isStudentOf) {
+                    // some personal relationship
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                // check on all already imported wikidata items
+                                Topic entity = getWikidataItemByEntityId(nameId);
+                                if (entity != null) log.info("  DEBUG: Matched student/doctoroal advisor to an existing Wikidata Topic by URI!");
+                                // check on all currently to be imported wikidata items (in memory)
+                                String relatedLabel = getItemLabelByEntityId(nameId);
+                                String relatedTo = (entity != null) ? entity.getSimpleValue().toString() : (relatedLabel != null) ? relatedLabel : nameId.getId();
+                                if (!nameId.getId().equals(relatedTo)) {
+                                    log.info("#### TODO New student/mentor connection: " + getFirstLabel(itemDocument) + " researching with or through " + relatedTo);
+                                } else {
+                                    log.info("(should fetch first related label of ... "+ nameId.getId()+") in lang=" + isoLanguageCode);
+                                }
+                            }
+                        }
+                    }
                 }
+
             }
         }
 
@@ -291,6 +382,30 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         }
     }
     
+    private Topic getWikidataItemByEntityId (EntityIdValue id) {
+        return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id.getId()));
+    }
+
+    private String getItemLabelByEntityId (EntityIdValue id) {
+        if (all_persons.containsKey(id.getId())) {
+            log.info("  ### Label Match found for Person" + all_persons.get(id.getId()));
+            return all_persons.get(id.getId());
+        }
+        if (all_institutions.containsKey(id.getId())) {
+            log.info("  ### Label Match found for Institution" + all_institutions.get(id.getId()));
+            return all_institutions.get(id.getId());
+        }
+        if (all_cities.containsKey(id.getId())) {
+            log.info("  ### Label Match found for City " + all_cities.get(id.getId()));
+            return all_persons.get(id.getId());
+        }
+        if (all_countries.containsKey(id.getId())) {
+            log.info("  ### Label Match found for Country " + all_countries.get(id.getId()));
+            return all_persons.get(id.getId());
+        }
+        return null;
+    }
+
     private String getFirstLabel(ItemDocument itemDocument) {
         MonolingualTextValue value = null;
         if (itemDocument.getLabels().size() > 1) {

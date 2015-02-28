@@ -63,7 +63,7 @@
                 + 'Start importing entities of your wikidata dump (file, json) </div>')
 
             $('#page-content').append('<div class="field-item wikidata-search-spinner">'
-                + '<img src="/org.deepamehta.wikidata-search/images/ajax-loader.gif" '
+                + '<img src="/org.deepamehta.wikidata-toolkit/images/ajax-loader.gif" '
                     + 'title="Processing the wikidata dump (file, json)"></div>')
         }
         

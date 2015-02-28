@@ -7,7 +7,7 @@
     <name>DeepaMehta 4 Wikidata Toolkit</name>
     <groupId>org.deepamehta</groupId>
     <artifactId>dm44-wikidata-toolkit</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
     <parent>
