@@ -1,5 +1,6 @@
 package org.deepamehta.plugins.wdtk;
 
+import de.deepamehta.core.Association;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
@@ -109,6 +110,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     HashMap<String, String> all_edible_fungis = new HashMap<String, String>();
     HashMap<String, double[]> all_coordinates = new HashMap<String, double[]>();
 
+    HashMap<String, String> worksAt = new HashMap<String, String>();
+    HashMap<String, String> livesAt = new HashMap<String, String>();
+    HashMap<String, String> affiliatedWith = new HashMap<String, String>();
+    HashMap<String, String> studentOf = new HashMap<String, String>();
+    HashMap<String, String> mentorOf = new HashMap<String, String>();
+
     @Override
     public void processItemDocument(ItemDocument itemDocument) {
 
@@ -125,6 +132,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         }
 
         // 1) Iterate over items statement groups
+
         if (itemDocument.getStatementGroups().size() > 0) {
             
             for (StatementGroup sg : itemDocument.getStatementGroups()) {
@@ -160,10 +168,10 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                     classRecord = getClassRecord(itemDocument, itemDocument.getItemId());
                 } **/
                 
-                // 2) Deal with the various specifics of this StatementGroup (Property)..
-                
+                // 1.1) Record various "attributes" of the current item
+
                 // -- is instance | subclass of
-                
+
                 if (isInstanceOf || isSubclassOf) {
                     for (Statement s : sg.getStatements()) {
                         // ### simply using the main snak value of this statement
@@ -284,6 +292,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                         }
                     }
 
+                // 1.2) Record various relations of current item to other items
+
                 } else if (isEmployeeOf) {
                     // some professional person to organisation relationship
                     for (Statement s : sg.getStatements()) {
@@ -293,15 +303,13 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
-                                if (entity != null) log.info("  DEBUG: Matched nameId to an existing Wikidata Topic by URI!");
-                                // check on all currently to be imported wikidata items (in memory)
-                                String relatedLabel = getItemLabelByEntityId(nameId);
-                                String affiliatedWith = (entity != null) ? entity.getSimpleValue().toString() : (relatedLabel != null) ? relatedLabel : nameId.getId();
-                                if (!nameId.getId().equals(affiliatedWith)) {
-                                    log.info("#### NEW Employee Connection: " +getFirstLabel(itemDocument)+ " is affiliated with \"" + affiliatedWith + "\"");   
-                                } else {
-                                    log.info("(should fetch first related label of ... "+ nameId.getId()+") in lang=" + isoLanguageCode);
-                                }
+                                if (entity != null) {
+                                    worksAt.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                } /** else {
+                                    // check on all currently to be imported wikidata items (in memory)
+                                    String relatedLabel = getItemLabelByEntityId(nameId);
+                                    if (relatedLabel != null) worksAt.put(itemDocument.getItemId().getId(), relatedLabel);
+                                } **/
                             }
                         }
                     }
@@ -315,15 +323,13 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
-                                if (entity != null) log.info("  DEBUG: Matched nameId to an existing Wikidata Topic by URI!");
-                                // check on all currently to be imported wikidata items (in memory)
-                                String relatedLabel = getItemLabelByEntityId(nameId);
-                                String affiliatedWith = (entity != null) ? entity.getSimpleValue().toString() : (relatedLabel != null) ? relatedLabel : nameId.getId();
-                                if (!nameId.getId().equals(affiliatedWith)) {
-                                    log.info("#### NEW Member Connection: " +getFirstLabel(itemDocument)+ " is affiliated with \"" + affiliatedWith + "\"");   
-                                } else {
-                                    log.info("(should fetch first related label of ... "+ nameId.getId()+") in lang=" + isoLanguageCode);
-                                }
+                                if (entity != null) {
+                                    affiliatedWith.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                } /* else {
+                                    // check on all currently to be imported wikidata items (in memory)
+                                    String relatedLabel = getItemLabelByEntityId(nameId);
+                                    if (relatedLabel != null) affiliatedWith.put(itemDocument.getItemId().getId(), relatedLabel);
+                                } **/
                             }
                         }
                     }
@@ -337,20 +343,18 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
-                                if (entity != null) log.info("  DEBUG: Matched nameId to an existing Wikidata Topic by URI!");
-                                // check on all currently to be imported wikidata items (in memory)
-                                String relatedLabel = getItemLabelByEntityId(nameId);
-                                String livingAt = (entity != null) ? entity.getSimpleValue().toString() : (relatedLabel != null) ? relatedLabel : nameId.getId();
-                                if (!nameId.getId().equals(livingAt)) {
-                                    log.info("#### TODO New living at connection: " + getFirstLabel(itemDocument) + " living at " + livingAt);   
-                                } else {
-                                    log.info("(should fetch first related label of ... "+ nameId.getId()+") in lang=" + isoLanguageCode);
-                                }
+                                if (entity != null) {
+                                    livesAt.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                } /** else {
+                                    // check on all currently to be imported wikidata items (in memory)
+                                    String relatedLabel = getItemLabelByEntityId(nameId);
+                                    if (relatedLabel != null) livesAt.put(itemDocument.getItemId().getId(), relatedLabel);
+                                } */
                             }
                         }
                     }
 
-                } else if (isDoctoralAdvisorOf || isDoctoralStudentOf || isStudentOf) {
+                } else if (isDoctoralStudentOf || isStudentOf) {
                     // some personal relationship
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
@@ -359,15 +363,33 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
-                                if (entity != null) log.info("  DEBUG: Matched student/doctoroal advisor to an existing Wikidata Topic by URI!");
-                                // check on all currently to be imported wikidata items (in memory)
-                                String relatedLabel = getItemLabelByEntityId(nameId);
-                                String relatedTo = (entity != null) ? entity.getSimpleValue().toString() : (relatedLabel != null) ? relatedLabel : nameId.getId();
-                                if (!nameId.getId().equals(relatedTo)) {
-                                    log.info("#### TODO New student/mentor connection: " + getFirstLabel(itemDocument) + " researching with or through " + relatedTo);
-                                } else {
-                                    log.info("(should fetch first related label of ... "+ nameId.getId()+") in lang=" + isoLanguageCode);
-                                }
+                                if (entity != null) {
+                                    studentOf.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                } /** else {
+                                    // check on all currently to be imported wikidata items (in memory)
+                                    String relatedLabel = getItemLabelByEntityId(nameId);
+                                    if (relatedLabel != null) studentOf.put(itemDocument.getItemId().getId(), relatedLabel);
+                                } */
+                            }
+                        }
+                    }
+
+                } else if (isDoctoralAdvisorOf) {
+                    // some personal relationship
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                // check on all already imported wikidata items
+                                Topic entity = getWikidataItemByEntityId(nameId);
+                                if (entity != null) {
+                                    mentorOf.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                }/**  else {
+                                    // check on all currently to be imported wikidata items (in memory)
+                                    String relatedLabel = getItemLabelByEntityId(nameId);
+                                    if (relatedLabel != null) mentorOf.put(itemDocument.getItemId().getId(), relatedLabel);
+                                } **/
                             }
                         }
                     }
@@ -388,19 +410,15 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
 
     private String getItemLabelByEntityId (EntityIdValue id) {
         if (all_persons.containsKey(id.getId())) {
-            log.info("  ### Label Match found for Person" + all_persons.get(id.getId()));
             return all_persons.get(id.getId());
         }
         if (all_institutions.containsKey(id.getId())) {
-            log.info("  ### Label Match found for Institution" + all_institutions.get(id.getId()));
             return all_institutions.get(id.getId());
         }
         if (all_cities.containsKey(id.getId())) {
-            log.info("  ### Label Match found for City " + all_cities.get(id.getId()));
             return all_persons.get(id.getId());
         }
         if (all_countries.containsKey(id.getId())) {
-            log.info("  ### Label Match found for Country " + all_countries.get(id.getId()));
             return all_persons.get(id.getId());
         }
         return null;
@@ -462,7 +480,6 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             TopicModel personModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
             person = dms.createTopic(personModel);
-            wdSearch.assignToWikidataWorkspace(person);
         }
         return person;
     }
@@ -483,7 +500,6 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
             // ### set GeoCoordinate Facet via values in all_coordinates
             institution = dms.createTopic(institutionModel);
-            wdSearch.assignToWikidataWorkspace(institution);
         }
         return institution;
     }
@@ -502,7 +518,6 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_CITY, new SimpleValue(name));
             // ### set GeoCoordinate Facet via values in all_coordinates
             city = dms.createTopic(cityModel);
-            wdSearch.assignToWikidataWorkspace(city);
         }
         return city;
     }
@@ -521,7 +536,6 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_NOTE, institutionComposite);
             // ### set GeoCoordinate Facet via values in all_coordinates
             city = dms.createTopic(cityModel);
-            wdSearch.assignToWikidataWorkspace(city);
         }
         return city;
     }
@@ -533,7 +547,6 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_COUNTRY, new SimpleValue(name));
             // ### set GeoCoordinate Facet via values in all_coordinates
             country = dms.createTopic(countryModel);
-            wdSearch.assignToWikidataWorkspace(country);
         }
         return country;
     }
@@ -617,6 +630,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         log.info("Start creating Topics ...");
         
+        // Matching the entities to the types of dm4-standard distro ..
+
         log.info(" ... " + all_cities.size() + " cities");
         for (String itemId : all_cities.keySet()) {
             String cityName = itemsFirstLabel.get(itemId);
@@ -645,7 +660,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             Topic institution;
             if (instName != null) {
                 institution = createInstitutionTopic(instName, itemId);
-                wdSearch.assignToWikidataWorkspace(institution);
+                // ### wdSearch.assignToWikidataWorkspace(institution);
             }
         }
         
@@ -657,12 +672,65 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 String firstName = fullName.split(" ")[0]; // ### import full name
                 String lastName = fullName.split(" ")[fullName.split(" ").length-1];
                 person = createPersonTopic(firstName, lastName, itemId);
-                wdSearch.assignToWikidataWorkspace(person);
+                // ### wdSearch.assignToWikidataWorkspace(person);
+                if (person == null) log.warning("Person Topic ("+itemId+") NOT created - reason unknown.");
             } else {
                 log.warning("Person Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
         }
         
+        // --- Import relations between entities
+
+        if (worksAt.isEmpty() && livesAt.isEmpty()) {
+            log.info("Skipping the import of relations, this works just among already imported items.");
+        } else {
+            log.info(" ... " + worksAt.size() + " worksAt associations");
+            for (String itemId : worksAt.keySet()) {
+                String reference = worksAt.get(itemId);
+                Association employeeOf = null;
+                Topic playerTwo = null, playerOne = null;
+                if (reference.startsWith("T")) {
+                    playerTwo = dms.getTopic(Long.parseLong(reference.substring(1)));
+                    playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
+                }
+                if (playerOne != null && playerTwo != null) {
+                    employeeOf = dms.createAssociation(new AssociationModel("dm4.core.association",
+                            new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
+                            new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
+                    log.info("Created new works-at relationship for " + itemId + " to " + playerTwo.getId() + "(" + playerTwo.getSimpleValue() + ")");
+                }
+                if (employeeOf != null) {
+                    // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);
+                    employeeOf.setSimpleValue("works at");
+                }
+            }
+
+            log.info(" ... " + livesAt.size() + " livesAt associations");
+            for (String itemId : livesAt.keySet()) {
+                String reference = livesAt.get(itemId);
+                Association citizen = null;
+                Topic playerTwo = null, playerOne = null;
+                if (reference.startsWith("T")) {
+                    log.info(" ... fetching .. " + reference);
+                    playerTwo = dms.getTopic(Long.parseLong(reference.substring(1)));
+                    playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
+                }
+                if (playerOne != null && playerTwo != null) {
+                    citizen = dms.createAssociation(new AssociationModel("dm4.core.association",
+                            new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
+                            new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
+                    log.info("Created new lives-at relationship for " + itemId + " to " + playerTwo.getId() + "(" + playerTwo.getSimpleValue() + ")");
+                }
+                if (citizen != null) {
+                    // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(citizen);
+                    citizen.setSimpleValue("lives at");
+                }
+            }
+
+        }
+
+        // --- Froods
+
         log.info(" ... " + all_herbs.size() + " herbs");
         for (String itemId : all_herbs.keySet()) { // this might work but only after having read in the complete dump
             String name = itemsFirstLabel.get(itemId);
