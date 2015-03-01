@@ -535,24 +535,6 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         return city;
     }
     
-    /** private Topic createNoteTopic(String name, String itemId) {
-        Topic city = null;
-        if (!alreadyExists(itemId)) {
-            ChildTopicsModel institutionComposite = new ChildTopicsModel();
-            institutionComposite.put(DM_NOTE_TITLE, name);
-            String descr = "";
-            if (itemsFirstDescription.get(itemId) != null) {
-                descr = "<p>"+itemsFirstDescription.get(itemId)+"</p>";
-                institutionComposite.put(DM_NOTE_DESCR, descr);
-            }
-            TopicModel cityModel = new TopicModel(
-                WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_NOTE, institutionComposite);
-            // ### set GeoCoordinate Facet via values in all_coordinates
-            city = dms.createTopic(cityModel);
-        }
-        return city;
-    } **/
-    
     private Topic createCountryTopic(String name, String itemId) {
         Topic country = null;
         if (!alreadyExists(itemId)) {
@@ -574,22 +556,24 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         return comp;
     }
     
-    private void createRelatedURLTopic(Topic topic, String itemId) {
-        if (all_websites.containsKey(itemId)) {
-            TopicModel url = new TopicModel(DM_WEBBROWSER_URL, 
-                new SimpleValue(all_websites.get(itemId)));
-            Topic website = dms.createTopic(url);
+    private void createRelatedURLTopic(Topic topic, String url) {
+        try {
+            TopicModel urlmodel = new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(url));
+            Topic website = dms.createTopic(urlmodel);
             if (website != null && topic != null) {
                 dms.createAssociation(new AssociationModel("dm4.core.association",
                     new TopicRoleModel(topic.getId(), "dm4.core.default"), 
                     new TopicRoleModel(website.getId(), "dm4.core.default")));
                 wdSearch.assignToWikidataWorkspace(website);
             }
+        } catch (Exception e) {
+            log.warning("FAILURE createRelatedURLTopics " + url + " not possible due to " +
+                e.getMessage() + " cause by " + e.getCause() + " class:" + e.getClass());
         }
     }
 
-    private void createItemRelations (HashMap<String, String> relations, String relationType) {
-        log.info(" ... " + relations.size() + " " +relationType+ " associations");
+    private void createItemRelations (HashMap<String, String> relations, String relationName, String relationType) {
+        log.info(" ... " + relations.size() + " " +relationName+ " associations");
         for (String itemId : relations.keySet()) {
             String reference = relations.get(itemId);
             Association relation = null;
@@ -599,14 +583,14 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
             }
             if (playerOne != null && playerTwo != null) {
-                relation = dms.createAssociation(new AssociationModel("dm4.core.association",
+                relation = dms.createAssociation(new AssociationModel(relationType,
                         new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
                         new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
-                log.info("Created new "+relationType+" relationship for " + itemId + " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ")");
+                log.info("Created new \""+relationType+"\" relationship for " + itemId + " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ")");
             }
             if (relation != null) {
                 // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);
-                relation.setSimpleValue(relationType);
+                relation.setSimpleValue(relationName);
             }
         }
     }
@@ -676,7 +660,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             Topic city = null;
             if (cityName != null) {
                 city = createCityTopic(cityName, itemId);
-                createRelatedURLTopic(city, itemId);
+                if (all_websites.containsKey(itemId)) {
+                    createRelatedURLTopic(city, all_websites.get(itemId));
+                }
             }
         }
 
@@ -686,7 +672,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             Topic country;
             if (countryName != null) {
                 country = createCountryTopic(countryName, itemId);
-                createRelatedURLTopic(country, itemId);
+                if (all_websites.containsKey(itemId)) {
+                    createRelatedURLTopic(country, all_websites.get(itemId));
+                }
             }
         }
         
@@ -717,74 +705,23 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             log.info("Skipping the import of relations, this works just with (and among) already imported items.");
         } else {
             log.info("### Start creating associations.");
-            createItemRelations(employeeOf, "employee of");
-            createItemRelations(citizenOf, "citizen of");
-            createItemRelations(affiliatedWith, "affiliated with");
-            createItemRelations(studentOf, "student of");
-            createItemRelations(mentorOf, "mentor of");
+            createItemRelations(employeeOf, "employee of", "org.deepamehta.wikidata.employee_of");
+            createItemRelations(citizenOf, "citizen of", "org.deepamehta.wikidata.citizen_of");
+            createItemRelations(affiliatedWith, "affiliated with", "org.deepamehta.wikidata.affiliated_with");
+            createItemRelations(studentOf, "student of", "org.deepamehta.wikidata.student_of");
+            createItemRelations(mentorOf, "mentor of", "org.deepamehta.wikidata.mentor_of");
         }
-
-        /** --- Froods
-
-        log.info(" ... " + all_herbs.size() + " herbs");
-        for (String itemId : all_herbs.keySet()) { // this might work but only after having read in the complete dump
-            String name = itemsFirstLabel.get(itemId);
-            Topic herbs;
-            if (name != null) {
-                herbs = createNoteTopic(name, itemId);
-                wdSearch.assignToWikidataWorkspace(herbs);
-            } else {
-                log.warning("Herb Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
-            }
-        }
-        
-        log.info(" ... " + all_vegetables.size() + " vegetables");
-        for (String itemId : all_vegetables.keySet()) { // this might work but only after having read in the complete dump
-            String name = itemsFirstLabel.get(itemId);
-            Topic vegetables;
-            if (name != null) {
-                vegetables = createNoteTopic(name, itemId);
-                wdSearch.assignToWikidataWorkspace(vegetables);
-            } else {
-                log.warning("Vegetable Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
-            }
-        }
-        
-        log.info(" ... " + all_edible_fruits.size() + " fruits");
-        for (String itemId : all_edible_fruits.keySet()) { // this might work but only after having read in the complete dump
-            String name = itemsFirstLabel.get(itemId);
-            Topic fruits;
-            if (name != null) {
-                fruits = createNoteTopic(name, itemId);
-                wdSearch.assignToWikidataWorkspace(fruits);
-            } else {
-                log.warning("Fruit Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
-            }
-        }
-        
-        log.info(" ... " + all_edible_fungis.size() + " fungis");
-        for (String itemId : all_edible_fungis.keySet()) { // this might work but only after having read in the complete dump
-            String name = itemsFirstLabel.get(itemId);
-            Topic fungis;
-            if (name != null) {
-                fungis = createNoteTopic(name, itemId);
-                wdSearch.assignToWikidataWorkspace(fungis);
-            } else {
-                log.warning("Fungi Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
-            }
-        } **/
 
         ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", 0);
         ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", 0);
         ResultList<RelatedTopic> cities = dms.getTopics("dm4.contacts.city", 0);
         ResultList<RelatedTopic> countries = dms.getTopics("dm4.contacts.country", 0);
-        // ResultList<RelatedTopic> notes = dms.getTopics("dm4.notes.note", 0);
         int numberOfAssocs = employeeOf.size() + citizenOf.size() + affiliatedWith.size() + studentOf.size() + mentorOf.size();
         if (personas != null && institutions != null && cities != null && countries != null) {
             log.info("DeepaMehta now recognizes " + this.all_persons.size() + " human beings"
                 + ", " + this.all_institutions.size() + " institutions, "
                 + this.all_cities.size() + " cities, " 
-                + this.all_countries.size() + " countries by name.\n" // and "+ notes.getTotalCount()+ " food items by name.");
+                + this.all_countries.size() + " countries by name.\n"
                 + "Additionally DeepaMehta recorded " + numberOfAssocs + " associations among these items.");
         }
         log.info("Finished importing.");

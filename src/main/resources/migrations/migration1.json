@@ -212,7 +212,7 @@
            "uri" : "org.deepamehta.wikidata.importer_default_config",
            "childs": {
                "org.deepamehta.wikidata.dumpfile_language_iso"  : "en",
-               "org.deepamehta.wikidata.dumpfile_sec_parse"     : "7",
+               "org.deepamehta.wikidata.dumpfile_sec_parse"     : "2",
                "org.deepamehta.wikidata.dumpfile_download"      : false,
                "org.deepamehta.wikidata.dumpfile_descriptions"  : true,
                "org.deepamehta.wikidata.dumpfile_websites"      : true,
@@ -220,9 +220,76 @@
                "org.deepamehta.wikidata.dumpfile_cities"        : true,
                "org.deepamehta.wikidata.dumpfile_countries"     : true,
                "org.deepamehta.wikidata.dumpfile_institutions"  : true,
-               "org.deepamehta.wikidata.dumpfile_persons"       : false
+               "org.deepamehta.wikidata.dumpfile_persons"       : true
                
            }
+        }
+    ],
+    "assoc_types": [
+        {
+            "value": "employee of",
+            "uri": "org.deepamehta.wikidata.employee_of",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#CC4514"
+                    }
+                }
+            ]
+        },
+        {
+            "value": "citizen of",
+            "uri": "org.deepamehta.wikidata.citizen_of",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#667BFF"
+                    }
+                }
+            ]
+        },
+        {
+            "value": "student of",
+            "uri": "org.deepamehta.wikidata.student_of",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#006699"
+                    }
+                }
+            ]
+        },
+        {
+            "value": "mentor of",
+            "uri": "org.deepamehta.wikidata.mentor_of",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#142ECC"
+                    }
+                }
+            ]
+        },
+        {
+            "value": "affiliated with",
+            "uri": "org.deepamehta.wikidata.affiliated_with",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#E8E8E8"
+                    }
+                }
+            ]
         }
     ]
 }
