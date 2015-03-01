@@ -535,7 +535,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         return city;
     }
     
-    /** private Topic createNoteTopic(String name, String itemId) {
+    private Topic createNoteTopic(String name, String itemId) {
         Topic city = null;
         if (!alreadyExists(itemId)) {
             ChildTopicsModel institutionComposite = new ChildTopicsModel();
@@ -551,7 +551,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             city = dms.createTopic(cityModel);
         }
         return city;
-    } **/
+    }
     
     private Topic createCountryTopic(String name, String itemId) {
         Topic country = null;
@@ -724,7 +724,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             createItemRelations(mentorOf, "mentor of");
         }
 
-        /** --- Froods
+        // --- Froods
 
         log.info(" ... " + all_herbs.size() + " herbs");
         for (String itemId : all_herbs.keySet()) { // this might work but only after having read in the complete dump
@@ -772,19 +772,19 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             } else {
                 log.warning("Fungi Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
-        } **/
+        }
 
         ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", 0);
         ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", 0);
         ResultList<RelatedTopic> cities = dms.getTopics("dm4.contacts.city", 0);
         ResultList<RelatedTopic> countries = dms.getTopics("dm4.contacts.country", 0);
-        // ResultList<RelatedTopic> notes = dms.getTopics("dm4.notes.note", 0);
+        ResultList<RelatedTopic> notes = dms.getTopics("dm4.notes.note", 0);
         int numberOfAssocs = employeeOf.size() + citizenOf.size() + affiliatedWith.size() + studentOf.size() + mentorOf.size();
         if (personas != null && institutions != null && cities != null && countries != null) {
             log.info("DeepaMehta now recognizes " + this.all_persons.size() + " human beings"
                 + ", " + this.all_institutions.size() + " institutions, "
                 + this.all_cities.size() + " cities, " 
-                + this.all_countries.size() + " countries by name.\n" // and "+ notes.getTotalCount()+ " food items by name.");
+                + this.all_countries.size() + " countries and "+ notes.getTotalCount()+ " food items by name.\n"
                 + "Additionally DeepaMehta recorded " + numberOfAssocs + " associations among these items.");
         }
         log.info("Finished importing.");
