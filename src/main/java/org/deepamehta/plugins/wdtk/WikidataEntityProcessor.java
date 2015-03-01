@@ -110,8 +110,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     HashMap<String, String> all_edible_fungis = new HashMap<String, String>();
     HashMap<String, double[]> all_coordinates = new HashMap<String, double[]>();
 
-    HashMap<String, String> worksAt = new HashMap<String, String>();
-    HashMap<String, String> livesAt = new HashMap<String, String>();
+    HashMap<String, String> employeeOf = new HashMap<String, String>();
+    HashMap<String, String> citizenOf = new HashMap<String, String>();
     HashMap<String, String> affiliatedWith = new HashMap<String, String>();
     HashMap<String, String> studentOf = new HashMap<String, String>();
     HashMap<String, String> mentorOf = new HashMap<String, String>();
@@ -123,8 +123,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         // 0) Get label and description of current item
         String itemId = itemDocument.getEntityId().getId();
-        String label = getFirstLabel(itemDocument);
-        String description = getFirstDescription(itemDocument);
+        String label = getItemLabel(itemDocument);
+        String description = getItemDescription(itemDocument);
         // .. so we memorize any non empty label or description for all (potential) items
         if (label != null && !label.isEmpty()) itemsFirstLabel.put(itemId, label);
         if (description != null && !description.isEmpty() && storeDescription) {
@@ -304,7 +304,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
-                                    worksAt.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                    employeeOf.put(itemDocument.getItemId().getId(), "T" + entity.getId());
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
                                     String relatedLabel = getItemLabelByEntityId(nameId);
@@ -344,7 +344,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
-                                    livesAt.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                    citizenOf.put(itemDocument.getItemId().getId(), "T" + entity.getId());
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
                                     String relatedLabel = getItemLabelByEntityId(nameId);
@@ -408,7 +408,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id.getId()));
     }
 
-    private String getItemLabelByEntityId (EntityIdValue id) {
+    /** private String getItemLabelByEntityId (EntityIdValue id) {
         if (all_persons.containsKey(id.getId())) {
             return all_persons.get(id.getId());
         }
@@ -422,9 +422,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             return all_persons.get(id.getId());
         }
         return null;
-    }
+    } **/
 
-    private String getFirstLabel(ItemDocument itemDocument) {
+    private String getItemLabel(ItemDocument itemDocument) {
         MonolingualTextValue value = null;
         if (itemDocument.getLabels().size() > 1) {
             if (itemDocument.getLabels().containsKey(this.isoLanguageCode)) {
@@ -444,7 +444,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         return value.getText();
     }
     
-    private String getFirstDescription(ItemDocument itemDocument) {
+    private String getItemDescription(ItemDocument itemDocument) {
         MonolingualTextValue value = null;
         if (itemDocument.getLabels().size() > 1) {
             if (itemDocument.getDescriptions().containsKey(this.isoLanguageCode)) {
@@ -467,19 +467,25 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private Topic createPersonTopic(String firstName, String lastName, String itemId) {
         Topic person = null;
         if (!alreadyExists(itemId)) {
-            ChildTopicsModel personComposite = new ChildTopicsModel().put(DM_PERSON_NAME, new ChildTopicsModel()
-                .put(DM_PERSON_FIRST_NAME, firstName).put(DM_PERSON_LAST_NAME, lastName)
-            );
-            // add "official website" to person if available
-            addWebbrowserURLAsChildTopic(personComposite, itemId);
-            // add item description to person
-            String description = itemsFirstDescription.get(itemId);
-            description = (description != null) ? "<p>"+description+"</p>" : "";
-            addWikidataItemDescription(itemId, description, personComposite);
-            // build up model
-            TopicModel personModel = new TopicModel(
-                WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
-            person = dms.createTopic(personModel);
+            try {
+                ChildTopicsModel personComposite = new ChildTopicsModel().put(DM_PERSON_NAME, new ChildTopicsModel()
+                    .put(DM_PERSON_FIRST_NAME, firstName).put(DM_PERSON_LAST_NAME, lastName)
+                );
+                // add "official website" to person if available
+                addWebbrowserURLAsChildTopic(personComposite, itemId);
+                // add item description to person
+                String description = itemsFirstDescription.get(itemId);
+                description = (description != null) ? "<p>"+description+"</p>" : "";
+                addWikidataItemDescription(itemId, description, personComposite);
+                // build up model
+                TopicModel personModel = new TopicModel(
+                    WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
+                person = dms.createTopic(personModel);
+                wdSearch.assignToWikidataWorkspace(person);
+            } catch (Exception e) {
+                log.warning("FAILURE in createPersonTopic due to " + e.getMessage() + "caused by "
+                        + e.getCause() + " class: " + e.getClass());
+            }
         }
         return person;
     }
@@ -487,19 +493,25 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private Topic createInstitutionTopic(String name, String itemId) {
         Topic institution = null;
         if (!alreadyExists(itemId)) {
-            ChildTopicsModel institutionComposite = new ChildTopicsModel();
-            institutionComposite.put(DM_INSTITUTION_NAME, name);
-            // add "official website" to institution if available
-            addWebbrowserURLAsChildTopic(institutionComposite, itemId);
-            // add item description to institution
-            String description = itemsFirstDescription.get(itemId);
-            description = (description != null) ? "<p>"+description+"</p>" : "";
-            addWikidataItemDescription(itemId, description, institutionComposite);
-            // build up model
-            TopicModel institutionModel = new TopicModel(
-                WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
-            // ### set GeoCoordinate Facet via values in all_coordinates
-            institution = dms.createTopic(institutionModel);
+            try {
+                ChildTopicsModel institutionComposite = new ChildTopicsModel();
+                institutionComposite.put(DM_INSTITUTION_NAME, name);
+                // add "official website" to institution if available
+                addWebbrowserURLAsChildTopic(institutionComposite, itemId);
+                // add item description to institution
+                String description = itemsFirstDescription.get(itemId);
+                description = (description != null) ? "<p>"+description+"</p>" : "";
+                addWikidataItemDescription(itemId, description, institutionComposite);
+                // build up model
+                TopicModel institutionModel = new TopicModel(
+                    WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
+                // ### set GeoCoordinate Facet via values in all_coordinates
+                institution = dms.createTopic(institutionModel);
+                wdSearch.assignToWikidataWorkspace(institution);
+            } catch (Exception e) {
+                log.warning("FAILURE in createInstitutionTopic due to " + e.getMessage() + "caused by "
+                        + e.getCause() + " class: " + e.getClass());
+            }
         }
         return institution;
     }
@@ -518,11 +530,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_CITY, new SimpleValue(name));
             // ### set GeoCoordinate Facet via values in all_coordinates
             city = dms.createTopic(cityModel);
+            wdSearch.assignToWikidataWorkspace(city);
         }
         return city;
     }
     
-    private Topic createNoteTopic(String name, String itemId) {
+    /** private Topic createNoteTopic(String name, String itemId) {
         Topic city = null;
         if (!alreadyExists(itemId)) {
             ChildTopicsModel institutionComposite = new ChildTopicsModel();
@@ -538,7 +551,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             city = dms.createTopic(cityModel);
         }
         return city;
-    }
+    } **/
     
     private Topic createCountryTopic(String name, String itemId) {
         Topic country = null;
@@ -547,6 +560,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_COUNTRY, new SimpleValue(name));
             // ### set GeoCoordinate Facet via values in all_coordinates
             country = dms.createTopic(countryModel);
+            wdSearch.assignToWikidataWorkspace(country);
         }
         return country;
     }
@@ -569,6 +583,30 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 dms.createAssociation(new AssociationModel("dm4.core.association",
                     new TopicRoleModel(topic.getId(), "dm4.core.default"), 
                     new TopicRoleModel(website.getId(), "dm4.core.default")));
+                wdSearch.assignToWikidataWorkspace(website);
+            }
+        }
+    }
+
+    private void createItemRelations (HashMap<String, String> relations, String relationType) {
+        log.info(" ... " + relations.size() + " " +relationType+ " associations");
+        for (String itemId : relations.keySet()) {
+            String reference = relations.get(itemId);
+            Association relation = null;
+            Topic playerTwo = null, playerOne = null;
+            if (reference.startsWith("T")) {
+                playerTwo = dms.getTopic(Long.parseLong(reference.substring(1)));
+                playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
+            }
+            if (playerOne != null && playerTwo != null) {
+                relation = dms.createAssociation(new AssociationModel("dm4.core.association",
+                        new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
+                        new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
+                log.info("Created new "+relationType+" relationship for " + itemId + " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ")");
+            }
+            if (relation != null) {
+                // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);
+                relation.setSimpleValue(relationType);
             }
         }
     }
@@ -628,7 +666,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         printProcessingStatus();
         
-        log.info("Start creating Topics ...");
+        log.info("### Start creating Topics ...");
         
         // Matching the entities to the types of dm4-standard distro ..
 
@@ -639,7 +677,6 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             if (cityName != null) {
                 city = createCityTopic(cityName, itemId);
                 createRelatedURLTopic(city, itemId);
-                wdSearch.assignToWikidataWorkspace(city);
             }
         }
 
@@ -650,30 +687,24 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             if (countryName != null) {
                 country = createCountryTopic(countryName, itemId);
                 createRelatedURLTopic(country, itemId);
-                wdSearch.assignToWikidataWorkspace(country);
             }
         }
         
         log.info(" ... " + all_institutions.size() + " institutions");
         for (String itemId : all_institutions.keySet()) {
             String instName = itemsFirstLabel.get(itemId);
-            Topic institution;
             if (instName != null) {
-                institution = createInstitutionTopic(instName, itemId);
-                // ### wdSearch.assignToWikidataWorkspace(institution);
+                createInstitutionTopic(instName, itemId);
             }
         }
         
         log.info(" ... " + all_persons.size() + " persons");
         for (String itemId : all_persons.keySet()) { // this might work but only after having read in the complete dump
             String fullName = itemsFirstLabel.get(itemId); // ### use all_institutions
-            Topic person;
             if (fullName != null) {
                 String firstName = fullName.split(" ")[0]; // ### import full name
                 String lastName = fullName.split(" ")[fullName.split(" ").length-1];
-                person = createPersonTopic(firstName, lastName, itemId);
-                // ### wdSearch.assignToWikidataWorkspace(person);
-                if (person == null) log.warning("Person Topic ("+itemId+") NOT created - reason unknown.");
+                createPersonTopic(firstName, lastName, itemId);
             } else {
                 log.warning("Person Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
@@ -681,55 +712,19 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         
         // --- Import relations between entities
 
-        if (worksAt.isEmpty() && livesAt.isEmpty()) {
-            log.info("Skipping the import of relations, this works just among already imported items.");
+        if (employeeOf.isEmpty() && citizenOf.isEmpty() && affiliatedWith.isEmpty()
+                && studentOf.isEmpty() && mentorOf.isEmpty()) {
+            log.info("Skipping the import of relations, this works just with (and among) already imported items.");
         } else {
-            log.info(" ... " + worksAt.size() + " worksAt associations");
-            for (String itemId : worksAt.keySet()) {
-                String reference = worksAt.get(itemId);
-                Association employeeOf = null;
-                Topic playerTwo = null, playerOne = null;
-                if (reference.startsWith("T")) {
-                    playerTwo = dms.getTopic(Long.parseLong(reference.substring(1)));
-                    playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
-                }
-                if (playerOne != null && playerTwo != null) {
-                    employeeOf = dms.createAssociation(new AssociationModel("dm4.core.association",
-                            new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
-                            new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
-                    log.info("Created new works-at relationship for " + itemId + " to " + playerTwo.getId() + "(" + playerTwo.getSimpleValue() + ")");
-                }
-                if (employeeOf != null) {
-                    // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);
-                    employeeOf.setSimpleValue("works at");
-                }
-            }
-
-            log.info(" ... " + livesAt.size() + " livesAt associations");
-            for (String itemId : livesAt.keySet()) {
-                String reference = livesAt.get(itemId);
-                Association citizen = null;
-                Topic playerTwo = null, playerOne = null;
-                if (reference.startsWith("T")) {
-                    log.info(" ... fetching .. " + reference);
-                    playerTwo = dms.getTopic(Long.parseLong(reference.substring(1)));
-                    playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
-                }
-                if (playerOne != null && playerTwo != null) {
-                    citizen = dms.createAssociation(new AssociationModel("dm4.core.association",
-                            new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
-                            new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
-                    log.info("Created new lives-at relationship for " + itemId + " to " + playerTwo.getId() + "(" + playerTwo.getSimpleValue() + ")");
-                }
-                if (citizen != null) {
-                    // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(citizen);
-                    citizen.setSimpleValue("lives at");
-                }
-            }
-
+            log.info("### Start creating associations.");
+            createItemRelations(employeeOf, "employee of");
+            createItemRelations(citizenOf, "citizen of");
+            createItemRelations(affiliatedWith, "affiliated with");
+            createItemRelations(studentOf, "student of");
+            createItemRelations(mentorOf, "mentor of");
         }
 
-        // --- Froods
+        /** --- Froods
 
         log.info(" ... " + all_herbs.size() + " herbs");
         for (String itemId : all_herbs.keySet()) { // this might work but only after having read in the complete dump
@@ -777,18 +772,20 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             } else {
                 log.warning("Fungi Topic ("+itemId+") NOT created (no label value found!) --- Skippin Entry");
             }
-        }
+        } **/
 
         ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", 0);
         ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", 0);
         ResultList<RelatedTopic> cities = dms.getTopics("dm4.contacts.city", 0);
         ResultList<RelatedTopic> countries = dms.getTopics("dm4.contacts.country", 0);
-        ResultList<RelatedTopic> notes = dms.getTopics("dm4.notes.note", 0);
+        // ResultList<RelatedTopic> notes = dms.getTopics("dm4.notes.note", 0);
+        int numberOfAssocs = employeeOf.size() + citizenOf.size() + affiliatedWith.size() + studentOf.size() + mentorOf.size();
         if (personas != null && institutions != null && cities != null && countries != null) {
             log.info("DeepaMehta now recognizes " + this.all_persons.size() + " human beings"
                 + ", " + this.all_institutions.size() + " institutions, "
                 + this.all_cities.size() + " cities, " 
-                + this.all_countries.size() + " countries and "+ notes.getTotalCount()+ " food items by name.");
+                + this.all_countries.size() + " countries by name.\n" // and "+ notes.getTotalCount()+ " food items by name.");
+                + "Additionally DeepaMehta recorded " + numberOfAssocs + " associations among these items.");
         }
         log.info("Finished importing.");
         this.timer.stop();
