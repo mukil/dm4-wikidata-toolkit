@@ -16,7 +16,7 @@
 
         dm4c.add_listener('topic_commands', function (topic) {
             // check if user is authenticated
-            if (!dm4c.has_create_permission('org.deepamehta.wikidata.dumpfile_import')) {
+            if (!dm4c.has_create_permission_for_topic_type('org.deepamehta.wikidata.dumpfile_import')) {
                 return
             }
             var commands = []

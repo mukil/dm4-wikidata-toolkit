@@ -3,21 +3,14 @@ package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.Association;
 import de.deepamehta.core.ChildTopics;
-import de.deepamehta.core.DeepaMehtaObject;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.TopicType;
 import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
-import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
-import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.accesscontrol.model.ACLEntry;
-import de.deepamehta.plugins.accesscontrol.model.AccessControlList;
-import de.deepamehta.plugins.accesscontrol.model.Operation;
-import de.deepamehta.plugins.accesscontrol.model.UserRole;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
+import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
 import java.io.IOException;
 import java.util.List;
@@ -71,7 +64,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @Inject
     private AccessControlService acService = null;
     
-    
+    @Inject
+    private WorkspacesService wsServices;
+
     
     // --
     // --- Public REST API Endpoints
@@ -201,23 +196,6 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     // --
     // --- DeepaMehta 4 Plugin Related Private Methods
     // --
-    
-    @Override
-    public void postInstall () {
-        DeepaMehtaTransaction tx = dms.beginTx();
-        try {
-            ResultList<RelatedTopic> importer = dms.getTopics("org.deepamehta.wikidata.dumpfile_import", 0);
-            for (RelatedTopic importer_setting : importer) {
-                assignToWikidataWorkspace(importer_setting);
-                setDefaultAdminACLEntries(importer_setting);
-            }
-            TopicType importerType = dms.getTopicType("org.deepamehta.wikidata.dumpfile_import");
-            assignToWikidataWorkspace(importerType);
-            tx.success();
-        } finally {
-            tx.finish();
-        }
-    }
 
     @Override
     public void assignToWikidataWorkspace(Topic topic) {
@@ -248,26 +226,6 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
             return userhome + "/";
         }
         return "";
-    }
-    
-    // === ACL Fix ===
-
-    private DeepaMehtaObject setDefaultGroupACLEntries(DeepaMehtaObject item) {
-        // Let's repair broken/missing ACL-Entries
-        ACLEntry writeList = new ACLEntry(Operation.WRITE, UserRole.MEMBER, UserRole.CREATOR, UserRole.OWNER);
-        acService.setACL(item, new AccessControlList(writeList));
-        acService.setCreator(item, "admin");
-        acService.setOwner(item, "admin");
-        return item;
-    }
-
-    private DeepaMehtaObject setDefaultAdminACLEntries(DeepaMehtaObject item) {
-        // Let's repair broken/missing ACL-Entries
-        ACLEntry writeEntry = new ACLEntry(Operation.WRITE, UserRole.CREATOR, UserRole.OWNER);
-        acService.setACL(item, new AccessControlList(writeEntry));
-        acService.setCreator(item, "admin");
-        acService.setOwner(item, "admin");
-        return item;
     }
     
 }

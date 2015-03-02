@@ -3,9 +3,13 @@ package org.deepamehta.plugins.wdtk.migrations;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
 import de.deepamehta.core.model.SimpleValue;
-import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
+import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Migration;
+import de.deepamehta.core.service.accesscontrol.SharingMode;
+import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
+import de.deepamehta.plugins.workspaces.service.WorkspacesService;
+import java.util.List;
 import java.util.logging.Logger;
 
 
@@ -22,16 +26,27 @@ public class Migration2 extends Migration {
 
     private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
 
+    @Inject
+    private WorkspacesService wsServices;
+
+    @Inject
+    private AccessControlService acServices;
+
     @Override
     public void run() {
 
         // 1) create \"Wikidata\"-Workspace (if non existent)
-        Topic existingWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
-        if (existingWorkspace == null) {
-            TopicModel workspace = new TopicModel(WS_WIKIDATA_URI, "dm4.workspaces.workspace");
-            Topic ws = dms.createTopic(workspace);
-            ws.setSimpleValue("Wikidata");
+        Topic workspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
+        if (workspace == null) {
+            workspace = wsServices.createWorkspace("Wikidata", WS_WIKIDATA_URI, SharingMode.PUBLIC);
+            acServices.setWorkspaceOwner(workspace, "admin");
             log.info("1) Created WIKIDATA Workspace ..");
+        }
+
+        // 2) connect all types to this workspace (upgrade to # 4.5)
+        List<Topic> topics = dms.getTopics("uri", new SimpleValue("org.deepamehta.wikidata.*"));
+        for (Topic t : topics) {
+            assignWorkspace(t);
         }
 
     }
