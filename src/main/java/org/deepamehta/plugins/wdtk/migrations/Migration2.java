@@ -1,5 +1,6 @@
 package org.deepamehta.plugins.wdtk.migrations;
 
+import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.TopicType;
 import de.deepamehta.core.model.AssociationModel;
@@ -47,8 +48,11 @@ public class Migration2 extends Migration {
         // 2) connect all types to this workspace (upgrade to # 4.5)
         List<Topic> topics = dms.getTopics("uri", new SimpleValue("org.deepamehta.wikidata.*"));
         for (Topic t : topics) {
-            TopicType type = dms.getTopicType(t.getUri());
-            wsServices.assignTypeToWorkspace(type, workspace.getId());
+            if (t.getTypeUri().equals("dm4.core.assoc_type")) {
+                wsServices.assignTypeToWorkspace(dms.getAssociationType(t.getUri()), workspace.getId());
+            } else {
+                wsServices.assignTypeToWorkspace(dms.getTopicType(t.getUri()), workspace.getId());
+            }
         }
 
     }
