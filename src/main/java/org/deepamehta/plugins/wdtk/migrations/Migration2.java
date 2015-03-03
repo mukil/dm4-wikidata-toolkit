@@ -50,8 +50,10 @@ public class Migration2 extends Migration {
         for (Topic t : topics) {
             if (t.getTypeUri().equals("dm4.core.assoc_type")) {
                 wsServices.assignTypeToWorkspace(dms.getAssociationType(t.getUri()), workspace.getId());
-            } else {
+            } else if (t.getTypeUri().equals("dm4.core.topic_type")) {
                 wsServices.assignTypeToWorkspace(dms.getTopicType(t.getUri()), workspace.getId());
+            } else if (t.getUri().equals("org.deepamehta.wikidata.importer_default_config")) {
+                wsServices.assignToWorkspace(t, workspace.getId());
             }
         }
 
