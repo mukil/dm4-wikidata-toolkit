@@ -11,6 +11,7 @@ import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.ResultList;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocumentProcessor;
 import org.wikidata.wdtk.datamodel.interfaces.EntityIdValue;
@@ -110,11 +111,11 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     HashMap<String, String> all_edible_fungis = new HashMap<String, String>();
     HashMap<String, double[]> all_coordinates = new HashMap<String, double[]>();
 
-    HashMap<String, String> employeeOf = new HashMap<String, String>();
-    HashMap<String, String> citizenOf = new HashMap<String, String>();
-    HashMap<String, String> affiliatedWith = new HashMap<String, String>();
-    HashMap<String, String> studentOf = new HashMap<String, String>();
-    HashMap<String, String> mentorOf = new HashMap<String, String>();
+    HashMap<String, HashMap<String, String>> employeeOf = new HashMap<String, HashMap<String, String>>();
+    HashMap<String, HashMap<String, String>> citizenOf = new HashMap<String, HashMap<String, String>>();
+    HashMap<String, HashMap<String, String>> affiliatedWith = new HashMap<String, HashMap<String, String>>();
+    HashMap<String, HashMap<String, String>> studentOf = new HashMap<String, HashMap<String, String>>();
+    HashMap<String, HashMap<String, String>> mentorOf = new HashMap<String, HashMap<String, String>>();
 
     @Override
     public void processItemDocument(ItemDocument itemDocument) {
@@ -304,7 +305,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
-                                    employeeOf.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                    HashMap<String, String> claim = new HashMap<String, String>();
+                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    employeeOf.put(itemDocument.getItemId().getId(), claim);
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
                                     String relatedLabel = getItemLabelByEntityId(nameId);
@@ -324,7 +327,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
-                                    affiliatedWith.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                    HashMap<String, String> claim = new HashMap<String, String>();
+                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    affiliatedWith.put(itemDocument.getItemId().getId(), claim);
                                 } /* else {
                                     // check on all currently to be imported wikidata items (in memory)
                                     String relatedLabel = getItemLabelByEntityId(nameId);
@@ -344,7 +349,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
-                                    citizenOf.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                    HashMap<String, String> claim = new HashMap<String, String>();
+                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    citizenOf.put(itemDocument.getItemId().getId(), claim);
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
                                     String relatedLabel = getItemLabelByEntityId(nameId);
@@ -364,7 +371,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
-                                    studentOf.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                    HashMap<String, String> claim = new HashMap<String, String>();
+                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    studentOf.put(itemDocument.getItemId().getId(), claim);
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
                                     String relatedLabel = getItemLabelByEntityId(nameId);
@@ -384,7 +393,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
-                                    mentorOf.put(itemDocument.getItemId().getId(), "T" + entity.getId());
+                                    HashMap<String, String> claim = new HashMap<String, String>();
+                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    mentorOf.put(itemDocument.getItemId().getId(), claim);
                                 }/**  else {
                                     // check on all currently to be imported wikidata items (in memory)
                                     String relatedLabel = getItemLabelByEntityId(nameId);
@@ -483,8 +494,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 person = dms.createTopic(personModel);
                 wdSearch.assignToWikidataWorkspace(person);
             } catch (Exception e) {
-                log.warning("FAILURE in createPersonTopic due to " + e.getMessage() + "caused by "
-                        + e.getCause() + " class: " + e.getClass());
+                log.log(Level.WARNING, e.getMessage(), e);
             }
         }
         return person;
@@ -509,8 +519,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 institution = dms.createTopic(institutionModel);
                 wdSearch.assignToWikidataWorkspace(institution);
             } catch (Exception e) {
-                log.warning("FAILURE in createInstitutionTopic due to " + e.getMessage() + "caused by "
-                        + e.getCause() + " class: " + e.getClass());
+                log.log(Level.WARNING, e.getMessage(), e);
             }
         }
         return institution;
@@ -572,25 +581,31 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         }
     }
 
-    private void createItemRelations (HashMap<String, String> relations, String relationName, String relationType) {
+    private void createItemRelations (HashMap<String, HashMap<String, String>> relations, String relationName, String relationType) {
         log.info(" ... " + relations.size() + " " +relationName+ " associations");
         for (String itemId : relations.keySet()) {
-            String reference = relations.get(itemId);
+            // ### add alreadyExists-check!
+            HashMap<String, String> referenceMap = relations.get(itemId);
             Association relation = null;
             Topic playerTwo = null, playerOne = null;
-            if (reference.startsWith("T")) {
-                playerTwo = dms.getTopic(Long.parseLong(reference.substring(1)));
-                playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
-            }
-            if (playerOne != null && playerTwo != null) {
-                relation = dms.createAssociation(new AssociationModel(relationType,
-                        new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
-                        new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
-                log.info("Created new \""+relationType+"\" relationship for " + itemId + " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ")");
-            }
-            if (relation != null) {
-                // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);
-                relation.setSimpleValue(relationName);
+            for (String propertyId : referenceMap.keySet()) {
+                String statement_uid = referenceMap.get(propertyId);
+                if (propertyId.startsWith("T")) {
+                    playerTwo = dms.getTopic(Long.parseLong(propertyId.substring(1)));
+                    playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
+                }
+                if (playerOne != null && playerTwo != null) {
+                    relation = dms.createAssociation(new AssociationModel(relationType,
+                            new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
+                            new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
+                    relation.setUri(statement_uid);
+                    log.info("Created new \""+relationType+"\" relationship for " + itemId +
+                            " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ") with GUID: \"" + relation.getUri()+ "\"");
+                }
+                if (relation != null) {
+                    // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);
+                    relation.setSimpleValue(relationName);
+                }
             }
         }
     }
