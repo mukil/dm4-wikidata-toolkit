@@ -594,17 +594,18 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                     playerTwo = dms.getTopic(Long.parseLong(propertyId.substring(1)));
                     playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
                 }
-                if (playerOne != null && playerTwo != null) {
+                if (playerOne != null && playerTwo != null &&
+                    !associationAlreadyExists(playerOne.getId(), playerTwo.getId(), relationType)) {
                     relation = dms.createAssociation(new AssociationModel(relationType,
                             new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
                             new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
                     relation.setUri(statement_uid);
-                    log.info("Created new \""+relationType+"\" relationship for " + itemId +
-                            " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ") with GUID: \"" + relation.getUri()+ "\"");
                 }
                 if (relation != null) {
                     // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);
                     relation.setSimpleValue(relationName);
+                    log.info("Created new \""+relationType+"\" relationship for " + itemId +
+                            " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ") with GUID: \"" + relation.getUri()+ "\"");
                 }
             }
         }
@@ -614,6 +615,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         String uri = WikidataEntityMap.WD_ENTITY_BASE_URI + wikidataItemId;
         Topic entity = dms.getTopic("uri", new SimpleValue(uri));
         if (entity == null) return false;
+        return true;
+    }
+
+    private boolean associationAlreadyExists (long playerOne, long playerTwo, String assocTypeUri) {
+        Association assoc = dms.getAssociation(assocTypeUri, playerOne, playerTwo, "dm4.core.default", "dm4.core.default");
+        if (assoc == null) return false;
         return true;
     }
 
