@@ -10,6 +10,7 @@ import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.ResultList;
+import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -476,6 +477,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     }
     
     private Topic createPersonTopic(String firstName, String lastName, String itemId) {
+        DeepaMehtaTransaction tx = dms.beginTx();
         Topic person = null;
         if (!alreadyExists(itemId)) {
             try {
@@ -493,14 +495,19 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                     WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
                 person = dms.createTopic(personModel);
                 wdSearch.assignToWikidataWorkspace(person);
+                tx.success();
             } catch (Exception e) {
                 log.log(Level.WARNING, e.getMessage(), e);
+                tx.failure();
+            } finally {
+                tx.finish();
             }
         }
         return person;
     }
     
     private Topic createInstitutionTopic(String name, String itemId) {
+        DeepaMehtaTransaction tx = dms.beginTx();
         Topic institution = null;
         if (!alreadyExists(itemId)) {
             try {
@@ -518,8 +525,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 // ### set GeoCoordinate Facet via values in all_coordinates
                 institution = dms.createTopic(institutionModel);
                 wdSearch.assignToWikidataWorkspace(institution);
+                tx.success();
             } catch (Exception e) {
                 log.log(Level.WARNING, e.getMessage(), e);
+                tx.failure();
+            } finally {
+                tx.finish();
             }
         }
         return institution;
@@ -533,6 +544,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     }
 
     private Topic createCityTopic(String name, String itemId) {
+        DeepaMehtaTransaction tx = dms.beginTx();
         Topic city = null;
         if (!alreadyExists(itemId)) {
             TopicModel cityModel = new TopicModel(
@@ -540,11 +552,14 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             // ### set GeoCoordinate Facet via values in all_coordinates
             city = dms.createTopic(cityModel);
             wdSearch.assignToWikidataWorkspace(city);
+            tx.success();
+            tx.finish();
         }
         return city;
     }
     
     private Topic createCountryTopic(String name, String itemId) {
+        DeepaMehtaTransaction tx = dms.beginTx();
         Topic country = null;
         if (!alreadyExists(itemId)) {
             TopicModel countryModel = new TopicModel(
@@ -552,6 +567,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             // ### set GeoCoordinate Facet via values in all_coordinates
             country = dms.createTopic(countryModel);
             wdSearch.assignToWikidataWorkspace(country);
+            tx.success();
+            tx.finish();
         }
         return country;
     }
@@ -566,6 +583,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     }
     
     private void createRelatedURLTopic(Topic topic, String url) {
+        DeepaMehtaTransaction tx = dms.beginTx();
         try {
             TopicModel urlmodel = new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(url));
             Topic website = dms.createTopic(urlmodel);
@@ -575,9 +593,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                     new TopicRoleModel(website.getId(), "dm4.core.default")));
                 wdSearch.assignToWikidataWorkspace(website);
             }
+            tx.success();
         } catch (Exception e) {
-            log.warning("FAILURE createRelatedURLTopics " + url + " not possible due to " +
-                e.getMessage() + " cause by " + e.getCause() + " class:" + e.getClass());
+            log.log(Level.WARNING, e.getMessage(), e);
+            tx.failure();
+        } finally {
+            tx.finish();
         }
     }
 
@@ -596,10 +617,13 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 }
                 if (playerOne != null && playerTwo != null &&
                     !associationAlreadyExists(playerOne.getId(), playerTwo.getId(), relationType)) {
+                    DeepaMehtaTransaction tx = dms.beginTx();
                     relation = dms.createAssociation(new AssociationModel(relationType,
                             new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
                             new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
                     relation.setUri(statement_uid);
+                    tx.success();
+                    tx.finish();
                 }
                 if (relation != null) {
                     // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);

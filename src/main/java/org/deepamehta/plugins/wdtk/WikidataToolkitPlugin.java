@@ -9,6 +9,7 @@ import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Transactional;
+import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
@@ -76,10 +77,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @Path("/import/entities/{importerId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
-    @Transactional
     public Topic importEntitiesFromWikidataDump(@PathParam("importerId") long settingsTopicId) {
         Topic settings = dms.getTopic(settingsTopicId);
-        importWikidataEntities(settings); // once at a time
+        importWikidataEntities(settings);
         return settings;
     }
     
@@ -165,8 +165,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
             return;
         }
         // Controller object for processing dumps:
-        DumpProcessingController dumpProcessingController = 
-            new DumpProcessingController("wikidatawiki");
+        DumpProcessingController dumpProcessingController = new DumpProcessingController("wikidatawiki");
         dumpProcessingController.setOfflineMode(noDownload);
         try {
             String path = findDumpDirectoryPath();
@@ -199,13 +198,16 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
 
     @Override
     public void assignToWikidataWorkspace(Topic topic) {
+        DeepaMehtaTransaction tx = dms.beginTx();
         if (topic == null) return;
         Topic wikidataWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
         if (!associationExists("dm4.core.aggregation", topic, wikidataWorkspace)) {
             dms.createAssociation(new AssociationModel("dm4.core.aggregation",
                 new TopicRoleModel(topic.getId(), "dm4.core.parent"),
                 new TopicRoleModel(wikidataWorkspace.getId(), "dm4.core.child")
-            ));   
+            ));
+            tx.success();
+            tx.finish();
         }
     }
     
