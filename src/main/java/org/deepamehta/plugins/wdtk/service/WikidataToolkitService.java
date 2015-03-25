@@ -9,7 +9,7 @@ import de.deepamehta.core.service.PluginService;
  
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata-toolkit
- * @version 0.0.1-SNAPSHOT
+ * @version 0.2
  */
 public interface WikidataToolkitService extends PluginService {
 
@@ -17,6 +17,4 @@ public interface WikidataToolkitService extends PluginService {
     
     Topic deleteAllWikidataTopics (long settingsTopicId);
     
-    void assignToWikidataWorkspace (Topic topic);
-
 }

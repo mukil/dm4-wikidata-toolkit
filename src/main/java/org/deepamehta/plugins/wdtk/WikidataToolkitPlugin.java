@@ -5,11 +5,9 @@ import de.deepamehta.core.Association;
 import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Transactional;
-import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
@@ -29,7 +27,7 @@ import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
  * @website https://github.com/mukil/dm4-wikidata-toolkit
- * @version 0.0.1-SNAPSHOT
+ * @version 0.2
  */
 
 @Path("/wdtk")
@@ -41,7 +39,6 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
 
     // --- Wikidata DeepaMehta URIs
 
-    private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
     // private final String WD_ENTITY_CLAIM_EDGE = "org.deepamehta.wikidata.claim_edge";
     private final String WD_IMPORT_LANG = "org.deepamehta.wikidata.dumpfile_language_iso";
     private final String WD_IMPORT_COUNTRIES = "org.deepamehta.wikidata.dumpfile_countries";
@@ -66,7 +63,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     private AccessControlService acService = null;
     
     @Inject
-    private WorkspacesService wsServices;
+    private WorkspacesService wsService = null;
 
     
     // --
@@ -144,7 +141,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean descriptions = childs.getBoolean(WD_IMPORT_DESCRIPTIONS);
         boolean websites = childs.getBoolean(WD_IMPORT_WEBSITES);
         boolean geoCoordinates = childs.getBoolean(WD_IMPORT_COORDINATES);
-        WikidataEntityProcessor wikidataEntityProcessor = new WikidataEntityProcessor(dms, this, timeOut, 
+        WikidataEntityProcessor wikidataEntityProcessor = new WikidataEntityProcessor(dms, wsService, timeOut, 
                 persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode);
         WikidataToolkitPlugin.this.startProcesssingWikidataDumpfile(wikidataEntityProcessor, noDownload);
     }
@@ -196,21 +193,6 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     // --- DeepaMehta 4 Plugin Related Private Methods
     // --
 
-    @Override
-    public void assignToWikidataWorkspace(Topic topic) {
-        DeepaMehtaTransaction tx = dms.beginTx();
-        if (topic == null) return;
-        Topic wikidataWorkspace = dms.getTopic("uri", new SimpleValue(WS_WIKIDATA_URI));
-        if (!associationExists("dm4.core.aggregation", topic, wikidataWorkspace)) {
-            dms.createAssociation(new AssociationModel("dm4.core.aggregation",
-                new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-                new TopicRoleModel(wikidataWorkspace.getId(), "dm4.core.child")
-            ));
-            tx.success();
-            tx.finish();
-        }
-    }
-    
     private boolean associationExists(String edge_type, Topic item, Topic user) {
         List<Association> results = dms.getAssociations(item.getId(), user.getId(), edge_type);
         return (results != null) ? ((results.size() > 0) ? true : false) : false;

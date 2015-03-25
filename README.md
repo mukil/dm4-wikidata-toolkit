@@ -3,7 +3,7 @@
 
 This plugin  provides users the functionality to process and import entities from a wikidata JSON dump file.
 
-Note: This plugin is experimental, since DeepaMehta 4 does not officially supports Java 1.7 but the WikidataToolkit requires Java 1.7 or higher.
+Note: This plugin makes use of the WikidataToolkit and therefore requires Java 1.7 or higher.
 
 ## Requirements
 
@@ -14,11 +14,14 @@ https://github.com/jri/deepamehta
 
 You can find a bundle file for installation at [http://download.deepamehta.de](http://download.deepamehta.de).
 
-Copy the downloaded `dm44-wikidata-toolkit-0.0.x.jar` file into your DeepaMehta bundle repository and re-start your [DeepaMehta installation](https://github.com/jri/deepamehta#requirements).
+Copy the downloaded `dm45-wikidata-toolkit-0.2.jar` file into your DeepaMehta bundle repository and re-start your [DeepaMehta installation](https://github.com/jri/deepamehta#requirements).
 
 ## Usage
 
-Find, edit and use the commands provided by any topic of type "Wikidata Dump Importer Settings" to start processing entities of a complete Wikidata JSON Dump.
+Find, edit and use the commands provided by any topic of type "Wikidata Dump Import" to
+* start importing or removing certain entities and/or
+* control aspects of the "to-be-imported" data-values (like language) and relations (like websites)
+of a complete Wikidata JSON Dump.
 
 ## Research & Documentation
 
@@ -30,11 +33,13 @@ This software is released under the terms of the GNU General Public License in V
 
 # Version History
 
-0.0.1, Upcoming
+0.2, Upcoming
 - Importing _Persons_, _Institutions_, _Cities_ and _Countries_ (using the _instance of_ property)
-  (with english label, english description and a webpage URL if provided as "official website")
-- Compatible with DM 4.4
+  with a label, description and a webpage URL (if provided as "official website")
+- Importing of five custom relation-types between persons, institutions, cities and countries:<\br>
+  namely: **citizen of**, **student of**, **employee of**, **mentor of**, **affiliated with**
+- Compatible with DM 4.5
 
---------------------------
-Author: Malte Reißig, 2014
+-----------------------------
+Author: Malte Reißig, 2014-15
 

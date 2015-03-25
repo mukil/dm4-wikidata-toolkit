@@ -11,6 +11,7 @@ import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
+import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,6 +55,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private final String DM_NOTE_DESCR          = "dm4.notes.text";
     private final String DM_NOTE                = "dm4.notes.note";
 
+    private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
+
     // setting: overall seconds and timer to parse the dumpfile
     final Timer timer = Timer.getNamedTimer("WikidataEntityProcessor");
     int lastSeconds = 0, entityCount = 0;
@@ -74,14 +77,15 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     String isoLanguageCode = WikidataEntityMap.LANG_EN;
 
     DeepaMehtaService dms;
-    WikidataToolkitPlugin wdSearch;
+    WorkspacesService workspaceService;
+    Topic wikidataWorkspace = null;
 
-    public WikidataEntityProcessor (DeepaMehtaService dms, WikidataToolkitPlugin wd, int timeout,
+    public WikidataEntityProcessor (DeepaMehtaService dms, WorkspacesService workspaceService, int timeout,
         boolean persons, boolean institutions, boolean cities, boolean countries, boolean descriptions, 
         boolean urls, boolean coordinates, String iso_lang) {
         this.timeout = timeout;
         this.dms = dms;
-        this.wdSearch = wd;
+        this.workspaceService = workspaceService;
         this.doCountries = countries;
         this.doCities = cities;
         this.doInstitutions = institutions;
@@ -90,6 +94,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         this.storeWebsiteAddresses = urls;
         this.storeDescription = descriptions;
         if (iso_lang != null) this.isoLanguageCode = iso_lang;
+        wikidataWorkspace = workspaceService.getWorkspace(WS_WIKIDATA_URI);
+        log.info("Set up to import wikidata topics into workspace \"" + wikidataWorkspace.getSimpleValue() + "\"");
     }
 
     // globally collect some label for every item processed.. (note: in memory!)
@@ -494,7 +500,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 TopicModel personModel = new TopicModel(
                     WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
                 person = dms.createTopic(personModel);
-                wdSearch.assignToWikidataWorkspace(person);
+                workspaceService.assignToWorkspace(person, wikidataWorkspace.getId());
                 tx.success();
             } catch (Exception e) {
                 log.log(Level.WARNING, e.getMessage(), e);
@@ -524,7 +530,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                     WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
                 // ### set GeoCoordinate Facet via values in all_coordinates
                 institution = dms.createTopic(institutionModel);
-                wdSearch.assignToWikidataWorkspace(institution);
+                workspaceService.assignToWorkspace(institution, wikidataWorkspace.getId());
                 tx.success();
             } catch (Exception e) {
                 log.log(Level.WARNING, e.getMessage(), e);
@@ -551,7 +557,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_CITY, new SimpleValue(name));
             // ### set GeoCoordinate Facet via values in all_coordinates
             city = dms.createTopic(cityModel);
-            wdSearch.assignToWikidataWorkspace(city);
+            workspaceService.assignToWorkspace(city, wikidataWorkspace.getId());
             tx.success();
             tx.finish();
         }
@@ -566,7 +572,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_COUNTRY, new SimpleValue(name));
             // ### set GeoCoordinate Facet via values in all_coordinates
             country = dms.createTopic(countryModel);
-            wdSearch.assignToWikidataWorkspace(country);
+            workspaceService.assignToWorkspace(country, wikidataWorkspace.getId());
             tx.success();
             tx.finish();
         }
@@ -591,7 +597,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 dms.createAssociation(new AssociationModel("dm4.core.association",
                     new TopicRoleModel(topic.getId(), "dm4.core.default"), 
                     new TopicRoleModel(website.getId(), "dm4.core.default")));
-                wdSearch.assignToWikidataWorkspace(website);
+                workspaceService.assignToWorkspace(website, wikidataWorkspace.getId());
             }
             tx.success();
         } catch (Exception e) {
@@ -626,10 +632,10 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                     tx.finish();
                 }
                 if (relation != null) {
-                    // ### assign assocs to ws: wdSearch.assignToWikidataWorkspace(employeeOf);
                     relation.setSimpleValue(relationName);
                     log.info("Created new \""+relationType+"\" relationship for " + itemId +
                             " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ") with GUID: \"" + relation.getUri()+ "\"");
+                    workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
                 }
             }
         }
