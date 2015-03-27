@@ -13,6 +13,7 @@ import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.*;
@@ -93,33 +94,43 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean cities = settings.getBoolean(WD_IMPORT_CITIES);
         boolean countries = settings.getBoolean(WD_IMPORT_COUNTRIES);
         // 
-        if (persons) { // Delete all "Person" Topics
-            for (RelatedTopic person : dms.getTopics("dm4.contacts.person", 0)){
-                if (person.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
-                    dms.deleteTopic(person.getId());
+        try {
+            log.info("Start to remove all wikidata topics ... ");
+            if (persons) { // Delete all "Person" Topics
+                for (RelatedTopic person : dms.getTopics("dm4.contacts.person", 0)){
+                    if (person.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
+                        log.info("Persons ... ");
+                        dms.deleteTopic(person.getId());
+                    }
                 }
             }
-        }
-        if (institutions) { // Delete all "Institution"-Topics
-            for (RelatedTopic institution : dms.getTopics("dm4.contacts.institution", 0)){
-                if (institution.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
-                    dms.deleteTopic(institution.getId());
-                }
-            }            
-        }
-        if (cities) { // Delete all "City"-Topics
-            for (RelatedTopic city : dms.getTopics("dm4.contacts.city", 0)){
-                if (city.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
-                    dms.deleteTopic(city.getId());
+            if (institutions) { // Delete all "Institution"-Topics
+                for (RelatedTopic institution : dms.getTopics("dm4.contacts.institution", 0)){
+                    if (institution.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
+                        log.info("Institutions ... ");
+                        dms.deleteTopic(institution.getId());
+                    }
                 }
             }
-        }
-        if (countries) { // Delete all "Country"-Topics
-            for (RelatedTopic country : dms.getTopics("dm4.contacts.country", 0)){
-                if (country.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
-                    dms.deleteTopic(country.getId());
+            if (cities) { // Delete all "City"-Topics
+                for (RelatedTopic city : dms.getTopics("dm4.contacts.city", 0)){
+                    if (city.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
+                        log.info("Cities ... ");
+                        dms.deleteTopic(city.getId());
+                    }
                 }
-            }            
+            }
+            if (countries) { // Delete all "Country"-Topics
+                for (RelatedTopic country : dms.getTopics("dm4.contacts.country", 0)){
+                    if (country.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
+                        log.info("Countries ... ");
+                        dms.deleteTopic(country.getId());
+                    }
+                }
+            }
+            log.info("Deleted all previously imported wikidata topics!");
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "removal of wikidata topics failed", e);
         }
         return importerSettings;
     }

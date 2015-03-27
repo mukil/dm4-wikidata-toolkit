@@ -14,6 +14,7 @@ public class WikidataEntityMap {
     final static String WD_TYPE_PROPERTY             = "property";
     final static String WD_TYPE_GLOBE_COORDINATES    = "globe-coordinates";
     final static String WD_ENTITY_BASE_URI           = "org.wikidata.entity.";
+    final static String URI_SEPERATOR             = ":";
     
     
     

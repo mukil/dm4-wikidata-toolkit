@@ -1,32 +1,141 @@
-
 {
     "topic_types": [
         {
-            "value": "Wikidata Text",
-            "uri": "org.deepamehta.wikidata.text",
+            "value": "Wikidata Language Code",
+            "uri": "org.deepamehta.wikidata.language_code",
+            "index_mode_uris": ["dm4.core.key"],
             "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
                     "childs": {
                         "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
+                        "dm4.webclient.searchable_as_unit": false
                     }
                 }
             ]
         },
         {
-            "value": "Wikidata Globe Coordinate",
-            "uri": "org.deepamehta.wikidata.globe_coordinate",
+            "value": "Wikidata Label Value",
+            "uri": "org.deepamehta.wikidata.label_value",
+            "index_mode_uris": ["dm4.core.fulltext_key", "dm4.core.key"],
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Description Value",
+            "uri": "org.deepamehta.wikidata.description_value",
+            "index_mode_uris": ["dm4.core.fulltext_key", "dm4.core.key"],
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Alias Value",
+            "uri": "org.deepamehta.wikidata.alias_value",
+            "index_mode_uris": ["dm4.core.fulltext_key", "dm4.core.key"],
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Entity Value",
+            "uri": "org.deepamehta.wikidata.entity_value",
             "data_type_uri": "dm4.core.composite",
             "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.label_value",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.description_value",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.alias_value",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.language_code",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Property",
+            "uri": "org.deepamehta.wikidata.property",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.entity_value",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Item",
+            "uri": "org.deepamehta.wikidata.item",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.entity_value",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.composition_def"
+                },
                 {
                     "child_type_uri": "dm4.geomaps.geo_coordinate",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
                 }
             ],
             "view_config_topics": [
@@ -34,137 +143,7 @@
                     "type_uri": "dm4.webclient.view_config",
                     "childs": {
                         "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Wikimedia Commons Media Name",
-            "uri": "org.deepamehta.wikidata.commons_media_name",
-            "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Wikimedia Commons Media Path",
-            "uri": "org.deepamehta.wikidata.commons_media_path",
-            "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Wikimedia Commons Media Type",
-            "uri": "org.deepamehta.wikidata.commons_media_type",
-            "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Wikimedia Commons License Name",
-            "uri": "org.deepamehta.wikidata.commons_license_name",
-            "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Wikimedia Commons License Info",
-            "uri": "org.deepamehta.wikidata.commons_license_info",
-            "data_type_uri": "dm4.core.text",
-            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
-                    }
-                }
-            ]
-        },
-        {
-            "value": "Wikidata Commons Media",
-            "uri": "org.deepamehta.wikidata.commons_media",
-            "data_type_uri": "dm4.core.composite",
-            "assoc_defs": [
-                {
-                    "child_type_uri": "org.deepamehta.wikidata.commons_media_name",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "org.deepamehta.wikidata.commons_media_path",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "org.deepamehta.wikidata.commons_media_type",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "org.deepamehta.wikidata.commons_license_name",
-                    "child_cardinality_uri": "dm4.core.one"
-                    "assoc_type_uri": "dm4.core.composition_def"
-                },
-                {
-                    "child_type_uri": "org.deepamehta.wikidata.commons_license_info",
-                    "child_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.composition_def"
-                }
-            ],
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.show_in_create_menu": false,
-                        "dm4.webclient.searchable_as_unit": false,
-                        "dm4.webclient.input_field_rows": 1,
-                        "dm4.webclient.locked": true
+                        "dm4.webclient.searchable_as_unit": false
                     }
                 }
             ]
@@ -172,14 +151,106 @@
     ],
     "assoc_types": [
         {
-            "value": "Wikidata Claim",
-            "uri": "org.deepamehta.wikidata.claim_edge",
+            "value": "employee of",
+            "uri": "org.deepamehta.wikidata.employee_of",
             "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#CC4514"
+                    }
+                }
+            ]
+        },
+        {
+            "value": "citizen of",
+            "uri": "org.deepamehta.wikidata.citizen_of",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#667BFF"
+                    }
+                }
+            ]
+        },
+        {
+            "value": "student of",
+            "uri": "org.deepamehta.wikidata.student_of",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
                     "childs": {
                         "dm4.webclient.color": "#006699"
+                    }
+                }
+            ]
+        },
+        {
+            "value": "mentor of",
+            "uri": "org.deepamehta.wikidata.mentor_of",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#142ECC"
+                    }
+                }
+            ]
+        },
+        {
+            "value": "affiliated with",
+            "uri": "org.deepamehta.wikidata.affiliated_with",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#E8E8E8"
                     }
                 }
             ]

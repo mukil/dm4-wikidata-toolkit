@@ -21,6 +21,7 @@ import org.wikidata.wdtk.datamodel.interfaces.GlobeCoordinatesValue;
 import org.wikidata.wdtk.datamodel.interfaces.ItemDocument;
 import org.wikidata.wdtk.datamodel.interfaces.MonolingualTextValue;
 import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument;
+import org.wikidata.wdtk.datamodel.interfaces.PropertyIdValue;
 import org.wikidata.wdtk.datamodel.interfaces.Statement;
 import org.wikidata.wdtk.datamodel.interfaces.StatementGroup;
 import org.wikidata.wdtk.datamodel.interfaces.StringValue;
@@ -112,11 +113,11 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     HashMap<String, String> all_cities = new HashMap<String, String>();
     HashMap<String, String> all_countries = new HashMap<String, String>();
     HashMap<String, String> all_websites = new HashMap<String, String>();
-    HashMap<String, String> all_herbs = new HashMap<String, String>();
+    HashMap<String, double[]> all_coordinates = new HashMap<String, double[]>();
+    /** ### HashMap<String, String> all_herbs = new HashMap<String, String>();
     HashMap<String, String> all_vegetables = new HashMap<String, String>();
     HashMap<String, String> all_edible_fruits = new HashMap<String, String>();
-    HashMap<String, String> all_edible_fungis = new HashMap<String, String>();
-    HashMap<String, double[]> all_coordinates = new HashMap<String, double[]>();
+    HashMap<String, String> all_edible_fungis = new HashMap<String, String>(); **/
 
     HashMap<String, HashMap<String, String>> employeeOf = new HashMap<String, HashMap<String, String>>();
     HashMap<String, HashMap<String, String>> citizenOf = new HashMap<String, HashMap<String, String>>();
@@ -133,7 +134,6 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         String itemId = itemDocument.getEntityId().getId();
         String label = getItemLabel(itemDocument);
         String description = getItemDescription(itemDocument);
-        // .. so we memorize any non empty label or description for all (potential) items
         if (label != null && !label.isEmpty()) itemsFirstLabel.put(itemId, label);
         if (description != null && !description.isEmpty() && storeDescription) {
             itemsFirstDescription.put(itemId, description);
@@ -220,7 +220,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                         if (doCountries && !all_countries.containsKey(itemId)) all_countries.put(itemId, label);
 
                                     // 2.5 current wikidata item is direct instanceOf|subclassOf "vegetable"
-                                    } else if (referencedItemId.equals(WikidataEntityMap.VEGETABLE)) {
+                                    /*** } else if (referencedItemId.equals(WikidataEntityMap.VEGETABLE)) {
                                         if (!all_vegetables.containsKey(itemId)) all_vegetables.put(itemId, label);
 
                                     // 2.6 current wikidata item is direct instanceOf|subclassOf "herb"
@@ -233,7 +233,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
 
                                     // 2.8 current wikidata item is direct instanceOf|subclassOf "herb"
                                     } else if (referencedItemId.equals(WikidataEntityMap.FUNGI)) {
-                                        if (!all_edible_fungis.containsKey(itemId)) all_edible_fungis.put(itemId, label);
+                                        if (!all_edible_fungis.containsKey(itemId)) all_edible_fungis.put(itemId, label); **/
                                     }
 
                                 }
@@ -309,11 +309,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof EntityIdValue) {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                PropertyIdValue propertyId = s.getClaim().getMainSnak().getPropertyId();
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
                                     HashMap<String, String> claim = new HashMap<String, String>();
-                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    claim.put("T" + entity.getId(), s.getStatementId() + WikidataEntityMap.URI_SEPERATOR + propertyId.getId());
                                     employeeOf.put(itemDocument.getItemId().getId(), claim);
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
@@ -331,11 +332,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof EntityIdValue) {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                PropertyIdValue propertyId = s.getClaim().getMainSnak().getPropertyId();
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
                                     HashMap<String, String> claim = new HashMap<String, String>();
-                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    claim.put("T" + entity.getId(), s.getStatementId() + WikidataEntityMap.URI_SEPERATOR + propertyId.getId());
                                     affiliatedWith.put(itemDocument.getItemId().getId(), claim);
                                 } /* else {
                                     // check on all currently to be imported wikidata items (in memory)
@@ -353,11 +355,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof EntityIdValue) {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                PropertyIdValue propertyId = s.getClaim().getMainSnak().getPropertyId();
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
                                     HashMap<String, String> claim = new HashMap<String, String>();
-                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    claim.put("T" + entity.getId(), s.getStatementId() + WikidataEntityMap.URI_SEPERATOR + propertyId.getId());
                                     citizenOf.put(itemDocument.getItemId().getId(), claim);
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
@@ -375,11 +378,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof EntityIdValue) {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                PropertyIdValue propertyId = s.getClaim().getMainSnak().getPropertyId();
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
                                     HashMap<String, String> claim = new HashMap<String, String>();
-                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    claim.put("T" + entity.getId(), s.getStatementId() + WikidataEntityMap.URI_SEPERATOR + propertyId.getId());
                                     studentOf.put(itemDocument.getItemId().getId(), claim);
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
@@ -397,11 +401,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof EntityIdValue) {
                                 EntityIdValue nameId = (EntityIdValue) mainSnakValue;
+                                PropertyIdValue propertyId = s.getClaim().getMainSnak().getPropertyId();
                                 // check on all already imported wikidata items
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
                                     HashMap<String, String> claim = new HashMap<String, String>();
-                                    claim.put("T" + entity.getId(), s.getStatementId());
+                                    claim.put("T" + entity.getId(), s.getStatementId() + WikidataEntityMap.URI_SEPERATOR + propertyId.getId());
                                     mentorOf.put(itemDocument.getItemId().getId(), claim);
                                 }/**  else {
                                     // check on all currently to be imported wikidata items (in memory)
@@ -424,6 +429,10 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     
     private Topic getWikidataItemByEntityId (EntityIdValue id) {
         return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id.getId()));
+    }
+
+    private Topic getWikidataItemByEntityId (String id) {
+        return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id));
     }
 
     /** private String getItemLabelByEntityId (EntityIdValue id) {
@@ -483,9 +492,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     }
     
     private Topic createPersonTopic(String firstName, String lastName, String itemId) {
-        DeepaMehtaTransaction tx = dms.beginTx();
         Topic person = null;
         if (!alreadyExists(itemId)) {
+            DeepaMehtaTransaction tx = dms.beginTx();
             try {
                 ChildTopicsModel personComposite = new ChildTopicsModel().put(DM_PERSON_NAME, new ChildTopicsModel()
                     .put(DM_PERSON_FIRST_NAME, firstName).put(DM_PERSON_LAST_NAME, lastName)
@@ -503,7 +512,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 workspaceService.assignToWorkspace(person, wikidataWorkspace.getId());
                 tx.success();
             } catch (Exception e) {
-                log.log(Level.WARNING, e.getMessage(), e);
+                log.log(Level.SEVERE, e.getMessage(), e);
                 tx.failure();
             } finally {
                 tx.finish();
@@ -513,9 +522,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     }
     
     private Topic createInstitutionTopic(String name, String itemId) {
-        DeepaMehtaTransaction tx = dms.beginTx();
         Topic institution = null;
         if (!alreadyExists(itemId)) {
+            DeepaMehtaTransaction tx = dms.beginTx();
             try {
                 ChildTopicsModel institutionComposite = new ChildTopicsModel();
                 institutionComposite.put(DM_INSTITUTION_NAME, name);
@@ -533,7 +542,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 workspaceService.assignToWorkspace(institution, wikidataWorkspace.getId());
                 tx.success();
             } catch (Exception e) {
-                log.log(Level.WARNING, e.getMessage(), e);
+                log.log(Level.SEVERE, e.getMessage(), e);
                 tx.failure();
             } finally {
                 tx.finish();
@@ -550,31 +559,43 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     }
 
     private Topic createCityTopic(String name, String itemId) {
-        DeepaMehtaTransaction tx = dms.beginTx();
         Topic city = null;
         if (!alreadyExists(itemId)) {
-            TopicModel cityModel = new TopicModel(
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                TopicModel cityModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_CITY, new SimpleValue(name));
-            // ### set GeoCoordinate Facet via values in all_coordinates
-            city = dms.createTopic(cityModel);
-            workspaceService.assignToWorkspace(city, wikidataWorkspace.getId());
-            tx.success();
-            tx.finish();
+                // ### set GeoCoordinate Facet via values in all_coordinates
+                city = dms.createTopic(cityModel);
+                workspaceService.assignToWorkspace(city, wikidataWorkspace.getId());
+                tx.success();
+            } catch (Exception re) {
+                tx.failure();
+                log.log(Level.SEVERE, "could not create city topic", re);
+            } finally {
+                tx.finish();
+            }
         }
         return city;
     }
     
     private Topic createCountryTopic(String name, String itemId) {
-        DeepaMehtaTransaction tx = dms.beginTx();
         Topic country = null;
         if (!alreadyExists(itemId)) {
-            TopicModel countryModel = new TopicModel(
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                TopicModel countryModel = new TopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_COUNTRY, new SimpleValue(name));
-            // ### set GeoCoordinate Facet via values in all_coordinates
-            country = dms.createTopic(countryModel);
-            workspaceService.assignToWorkspace(country, wikidataWorkspace.getId());
-            tx.success();
-            tx.finish();
+                // ### set GeoCoordinate Facet via values in all_coordinates
+                country = dms.createTopic(countryModel);
+                workspaceService.assignToWorkspace(country, wikidataWorkspace.getId());
+                tx.success();
+            } catch (Exception re) {
+                tx.failure();
+                log.log(Level.SEVERE, "could not create city topic", re);
+            } finally {
+                tx.finish();
+            }
         }
         return country;
     }
@@ -601,7 +622,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             }
             tx.success();
         } catch (Exception e) {
-            log.log(Level.WARNING, e.getMessage(), e);
+            log.log(Level.SEVERE, e.getMessage(), e);
             tx.failure();
         } finally {
             tx.finish();
@@ -610,32 +631,53 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
 
     private void createItemRelations (HashMap<String, HashMap<String, String>> relations, String relationName, String relationType) {
         log.info(" ... " + relations.size() + " " +relationName+ " associations");
+        // Key: Wikidata Entity/Item ID, Value: Set<TopicId, StatementUID>
         for (String itemId : relations.keySet()) {
-            // ### add alreadyExists-check!
             HashMap<String, String> referenceMap = relations.get(itemId);
             Association relation = null;
             Topic playerTwo = null, playerOne = null;
-            for (String propertyId : referenceMap.keySet()) {
-                String statement_uid = referenceMap.get(propertyId);
-                if (propertyId.startsWith("T")) {
-                    playerTwo = dms.getTopic(Long.parseLong(propertyId.substring(1)));
+            // Key: Topic ID, Value: Statemend-UID
+            for (String relatedEntityId : referenceMap.keySet()) {
+                String statementValueCode = referenceMap.get(relatedEntityId);
+                String statementGUID = statementValueCode.split(WikidataEntityMap.URI_SEPERATOR)[0];
+                String propertyEntityId = statementValueCode.split(WikidataEntityMap.URI_SEPERATOR)[1];
+                if (relatedEntityId.startsWith("T")) {
+                    playerTwo = dms.getTopic(Long.parseLong(relatedEntityId.substring(1)));
                     playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
                 }
                 if (playerOne != null && playerTwo != null &&
                     !associationAlreadyExists(playerOne.getId(), playerTwo.getId(), relationType)) {
+                    Topic propertyEntity = getWikidataItemByEntityId(propertyEntityId);
+                    ChildTopicsModel assocModel = null;
+                    if (propertyEntity == null) { // do create new property entity topic
+                        assocModel = new ChildTopicsModel()
+                            .put("org.deepamehta.wikidata.property", new TopicModel(
+                                    WikidataEntityMap.WD_ENTITY_BASE_URI + propertyEntityId,
+                                    "org.deepamehta.wikidata.property"));
+                    } else {
+                        assocModel = new ChildTopicsModel()
+                            .putRef("org.deepamehta.wikidata.property", propertyEntity.getId());
+                    }
                     DeepaMehtaTransaction tx = dms.beginTx();
-                    relation = dms.createAssociation(new AssociationModel(relationType,
-                            new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
-                            new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
-                    relation.setUri(statement_uid);
-                    tx.success();
-                    tx.finish();
-                }
-                if (relation != null) {
-                    relation.setSimpleValue(relationName);
-                    log.info("Created new \""+relationType+"\" relationship for " + itemId +
-                            " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ") with GUID: \"" + relation.getUri()+ "\"");
-                    workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
+                    try {
+                        // ### relation.setSimpleValue(relationName);
+                        relation = dms.createAssociation(new AssociationModel(relationType,
+                                new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
+                                new TopicRoleModel(playerTwo.getId(), "dm4.core.default"), assocModel));
+                        relation.setUri(statementGUID);
+                        if (relation != null) {
+                            log.info("Created new \""+relationType+"\" relationship for " + itemId +
+                                    " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ") with GUID: \""
+                                    + relation.getUri() + "\" and propertyEntityID: \"" + propertyEntityId +"\"");
+                            workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
+                        }
+                        tx.success();
+                    } catch (Exception e) {
+                        log.log(Level.SEVERE, e.getMessage(), e);
+                        tx.failure();
+                    } finally {
+                        tx.finish();
+                    }
                 }
             }
         }

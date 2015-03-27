@@ -220,76 +220,9 @@
                "org.deepamehta.wikidata.dumpfile_cities"        : true,
                "org.deepamehta.wikidata.dumpfile_countries"     : true,
                "org.deepamehta.wikidata.dumpfile_institutions"  : true,
-               "org.deepamehta.wikidata.dumpfile_persons"       : true
+               "org.deepamehta.wikidata.dumpfile_persons"       : false
                
            }
-        }
-    ],
-    "assoc_types": [
-        {
-            "value": "employee of",
-            "uri": "org.deepamehta.wikidata.employee_of",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.color": "#CC4514"
-                    }
-                }
-            ]
-        },
-        {
-            "value": "citizen of",
-            "uri": "org.deepamehta.wikidata.citizen_of",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.color": "#667BFF"
-                    }
-                }
-            ]
-        },
-        {
-            "value": "student of",
-            "uri": "org.deepamehta.wikidata.student_of",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.color": "#006699"
-                    }
-                }
-            ]
-        },
-        {
-            "value": "mentor of",
-            "uri": "org.deepamehta.wikidata.mentor_of",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.color": "#142ECC"
-                    }
-                }
-            ]
-        },
-        {
-            "value": "affiliated with",
-            "uri": "org.deepamehta.wikidata.affiliated_with",
-            "data_type_uri": "dm4.core.text",
-            "view_config_topics": [
-                {
-                    "type_uri": "dm4.webclient.view_config",
-                    "childs": {
-                        "dm4.webclient.color": "#E8E8E8"
-                    }
-                }
-            ]
         }
     ]
 }
