@@ -2,11 +2,14 @@
 package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.Association;
+import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
+import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
+import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
@@ -19,6 +22,7 @@ import java.util.logging.Logger;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
+import org.wikidata.wdtk.datamodel.interfaces.EntityIdValue;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
 
@@ -135,9 +139,27 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         return importerSettings;
     }
 
+    @GET
+    @Path("/query/{itemId}/{propertyId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResultList<RelatedTopic> getRelatedTopics(@PathParam("itemId") String itemId, @PathParam("propertyId") String propertyId) {
+        Topic item = getWikidataItemByEntityId(itemId);
+        Topic propertyTopic = getWikidataItemByEntityId(propertyId.trim());
+        AssociationType propertyType = dms.getAssociationType(
+                propertyTopic.getRelatedTopic("dm4.core.aggregation", "dm4.core.child", "dm4.core.parent", "dm4.core.assoc_type").getUri());
+        log.info("Fetch what is related via \"" + propertyTopic.getUri() + "\" assocTypeUri: " + propertyType.getUri() + " to " + "\"" + item.getSimpleValue() + "\"");
+        return item.getRelatedTopics(propertyType.getUri(), 0);
+    }
+
     // --
     // --- Methods to process and import topics based on a complete (daily) wikidatawiki (json) dump.
     // --
+
+    // ### remove copy in WikidataEntityProcessor
+    private Topic getWikidataItemByEntityId (String id) {
+        return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id));
+    }
+
         
     private void importWikidataEntities(Topic importerSettings) {
         // ### read in settings stored as child topics
