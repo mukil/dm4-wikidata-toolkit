@@ -41,7 +41,7 @@
 
             var requestUri = '/wdtk/import/entities/' + dm4c.selected_object.id
             var response_data_type = response_data_type || "json"
-            //
+            // ### add ?no_workspace_assignment=true
             $.ajax({
                 type: "GET", url: requestUri,
                 dataType: response_data_type, processData: false,

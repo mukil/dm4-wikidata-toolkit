@@ -21,8 +21,8 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response.Status;
 import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
-import org.wikidata.wdtk.datamodel.interfaces.EntityIdValue;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
 
@@ -145,10 +145,33 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     public ResultList<RelatedTopic> getRelatedTopics(@PathParam("itemId") String itemId, @PathParam("propertyId") String propertyId) {
         Topic item = getWikidataItemByEntityId(itemId);
         Topic propertyTopic = getWikidataItemByEntityId(propertyId.trim());
-        AssociationType propertyType = dms.getAssociationType(
-                propertyTopic.getRelatedTopic("dm4.core.aggregation", "dm4.core.child", "dm4.core.parent", "dm4.core.assoc_type").getUri());
-        log.info("Fetch what is related via \"" + propertyTopic.getUri() + "\" assocTypeUri: " + propertyType.getUri() + " to " + "\"" + item.getSimpleValue() + "\"");
-        return item.getRelatedTopics(propertyType.getUri(), 0);
+        if (propertyTopic != null) {
+            log.fine("### Query Wikidata Property \"" + propertyTopic.getUri() + "\"");
+            ResultList<RelatedTopic> associatedAssocTypes = propertyTopic.getRelatedTopics("dm4.core.aggregation", "dm4.core.child",
+                    "dm4.core.parent", "dm4.core.assoc_type", 0);
+            if (associatedAssocTypes.getSize() == 1) {
+                AssociationType propertyType = dms.getAssociationType(associatedAssocTypes.get(0).getUri());
+                if (item != null) {
+                    ResultList<RelatedTopic> results = item.getRelatedTopics(propertyType.getUri(), 0);
+                    String resultShowCaseInfo = "Nothing we know of.";
+                    if (results.getSize() >= 1) {
+                        Topic firstItem = results.get(0);
+                        resultShowCaseInfo = firstItem.getSimpleValue() + " ("+firstItem.getUri() + ") .. at least.";
+                    }
+                    log.info("### Query: What is related to " + "\"" + item.getSimpleValue() + "\" via \""
+                            + propertyType.getSimpleValue() + "\" >>> " + resultShowCaseInfo);
+                    return results;
+                } else {
+                    log.severe("### Query: Item with ID: " + itemId + " NOT FOUND in DB! - SKIPPING QUERY");
+                }
+            } else {
+                log.severe("### Query: could not fetch ONE assocType for given " + propertyId + " BUT => "
+                    + associatedAssocTypes.getSize() + " - SKIPPING QUERY due to misconfiguration");
+            }
+        } else {
+            log.severe("### Query: Property with ID: " + propertyId + " NOT FOUND in DB!");
+        }
+        return null;
     }
 
     // --
