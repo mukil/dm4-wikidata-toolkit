@@ -153,7 +153,15 @@
         {
             "value": "employee of",
             "uri": "org.deepamehta.wikidata.employee_of",
-            "data_type_uri": "dm4.core.text",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
@@ -166,7 +174,15 @@
         {
             "value": "citizen of",
             "uri": "org.deepamehta.wikidata.citizen_of",
-            "data_type_uri": "dm4.core.text",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
@@ -179,7 +195,15 @@
         {
             "value": "student of",
             "uri": "org.deepamehta.wikidata.student_of",
-            "data_type_uri": "dm4.core.text",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
@@ -192,7 +216,15 @@
         {
             "value": "mentor of",
             "uri": "org.deepamehta.wikidata.mentor_of",
-            "data_type_uri": "dm4.core.text",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",
@@ -205,7 +237,15 @@
         {
             "value": "affiliated with",
             "uri": "org.deepamehta.wikidata.affiliated_with",
-            "data_type_uri": "dm4.core.text",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.property",
+                    "child_cardinality_uri": "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
             "view_config_topics": [
                 {
                     "type_uri": "dm4.webclient.view_config",

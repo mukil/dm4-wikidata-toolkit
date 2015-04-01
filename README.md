@@ -23,9 +23,20 @@ Find, edit and use the commands provided by any topic of type "Wikidata Dump Imp
 * control aspects of the "to-be-imported" data-values (like language) and relations (like websites)
 of a complete Wikidata JSON Dump.
 
+## REST API
+
+You can do GET requests like the following and return a simple list of JSON topics/assocations:
+
+- `/wdtk/query/P108/Q9531/`
+- `/wdtk/query/P108/Q9531/P27/Q183/`
+- `/wdtk/claims/P27`
+- `/wdtk/claims/P27/Q183`
+
+No optimizations done yet, just operating by deepamehta 4 standard means.
+
 ## Research & Documentation
 
-You can find more infos on this project in the DeepaMehta Community Trac at https://trac.deepamehta.de/wiki/WikidataSearchPlugin%20
+You can find some background infos (but outdated details) on the project page in the DeepaMehta Community Trac at https://trac.deepamehta.de/wiki/WikidataSearchPlugin%20
 
 # GNU Public License
 

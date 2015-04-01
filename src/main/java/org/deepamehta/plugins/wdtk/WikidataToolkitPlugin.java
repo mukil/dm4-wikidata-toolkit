@@ -4,6 +4,7 @@ package org.deepamehta.plugins.wdtk;
 import de.deepamehta.core.Association;
 import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.ChildTopics;
+import de.deepamehta.core.RelatedAssociation;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.SimpleValue;
@@ -15,13 +16,13 @@ import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response.Status;
 import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
@@ -139,14 +140,24 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         return importerSettings;
     }
 
+    /**
+     * For example: Firing a GET to `/wdtk/query/P108/Q9531` will respond with
+     * a list of persons imported from wikidata formerly|currently employed by BBC.
+     *
+     * @param propertyId    String valid Wikidata Propery ID (e.g "P108")
+     * @param itemId        String valid Wikidata Item ID (e.g "Q42")
+     * @return              ResultList of DeepaMehta 4 Topics which are relate to the
+     *                      given item via the given property.
+     */
     @GET
-    @Path("/query/{itemId}/{propertyId}")
+    @Path("/query/{propertyId}/{itemId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResultList<RelatedTopic> getRelatedTopics(@PathParam("itemId") String itemId, @PathParam("propertyId") String propertyId) {
+    public ResultList<RelatedTopic> getRelatedTopics(@PathParam("propertyId") String propertyId,
+            @PathParam("itemId") String itemId) {
         Topic item = getWikidataItemByEntityId(itemId);
         Topic propertyTopic = getWikidataItemByEntityId(propertyId.trim());
         if (propertyTopic != null) {
-            log.fine("### Query Wikidata Property \"" + propertyTopic.getUri() + "\"");
+            log.fine("### Query Related Topics for Property \"" + propertyTopic.getUri() + "\"");
             ResultList<RelatedTopic> associatedAssocTypes = propertyTopic.getRelatedTopics("dm4.core.aggregation", "dm4.core.child",
                     "dm4.core.parent", "dm4.core.assoc_type", 0);
             if (associatedAssocTypes.getSize() == 1) {
@@ -170,6 +181,104 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
             }
         } else {
             log.severe("### Query: Property with ID: " + propertyId + " NOT FOUND in DB!");
+        }
+        return null;
+    }
+
+    /**
+     * Will simply just return the list of all imported claims involving the given property.
+     * @param propertyId    String valid Wikidata Propery ID (e.g "P27")
+     * @return              List of all imported claims (along with naming both players involved)
+     *                      for the given property ID.
+     */
+    @GET
+    @Path("/claims/{propertyId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResultList<RelatedAssociation> getRelatedAssocations(@PathParam("propertyId") String propertyId) {
+        Topic propertyTopic = getWikidataItemByEntityId(propertyId.trim());
+        if (propertyTopic != null) {
+            log.info("### Query Wikidata Claims by property \"" + propertyTopic.getUri() + "\"");
+            return propertyTopic.getRelatedAssociations("dm4.core.aggregation", null, null, null);
+        } else {
+            log.severe("### Query: Property with ID: " + propertyId + " NOT FOUND in DB!");
+        }
+        return null;
+    }
+
+    /**
+     * Simply joining the list of all imported claims relating somehow (=on both ends)
+     * to the given wikidata Item ID.
+     * @param propertyId        String valid Wikidata Propery ID (e.g "P27")
+     * @param itemId            String valid Wikidata Item ID (e.g "Q42")
+     * @return
+     */
+    @GET
+    @Path("/claims/{propertyId}/{itemId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<RelatedAssociation> getRelatedAssocationsForItem(@PathParam("propertyId") String propertyId,
+            @PathParam("itemId") String itemId) {
+        Topic item = getWikidataItemByEntityId(itemId.trim());
+        ArrayList<RelatedAssociation> collection = new ArrayList<RelatedAssociation>();
+        ResultList<RelatedAssociation> claims = getRelatedAssocations(propertyId);
+        for (RelatedAssociation claim : claims.getItems()) {
+            if (claim.getPlayer1().getId() == item.getId() ||
+                claim.getPlayer2().getId() == item.getId()) collection.add(claim);
+        }
+        return collection;
+    }
+
+    /**
+     *
+     * @param propertyId
+     * @param itemId
+     * @param propertyTwoId
+     * @param itemTwoId
+     * @return                  A list of topics relating to both wikidata items via the given property ID.
+     */
+    @GET
+    @Path("/query/{propertyId}/{itemId}/{propertyTwoId}/{itemTwoId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<RelatedTopic> getSuperRelatedTopics(@PathParam("propertyId") String propertyId,
+            @PathParam("itemId") String itemId, @PathParam("propertyTwoId") String propertyTwoId,
+            @PathParam("itemTwoId") String itemTwoId) {
+        ResultList<RelatedTopic> firstHopResults = getRelatedTopics(propertyId, itemId);
+        ArrayList<RelatedTopic> collection = new ArrayList<RelatedTopic>();
+        if (firstHopResults.getSize() > 0) {
+            Topic propertyTwoTopic = getWikidataItemByEntityId(propertyTwoId.trim());
+            for (RelatedTopic result : firstHopResults.getItems()) {
+                if (propertyTwoTopic != null) {
+                    log.fine("### Query Super Related Topic for Property \"" + propertyTwoTopic.getSimpleValue()+ "\"");
+                    ResultList<RelatedTopic> associatedAssocTypes = propertyTwoTopic.getRelatedTopics("dm4.core.aggregation", "dm4.core.child",
+                            "dm4.core.parent", "dm4.core.assoc_type", 0);
+                    if (associatedAssocTypes.getSize() == 1) {
+                        AssociationType propertyTypeTwo = dms.getAssociationType(associatedAssocTypes.get(0).getUri());
+                        if (itemTwoId != null && !itemTwoId.equals("NOQ")) {
+                            log.info("### Query: What is super related to " + "\"" + itemTwoId+ "\" via \""
+                                    + propertyTypeTwo.getSimpleValue() + "\" >>> ");
+                            ResultList<RelatedTopic> results = result.getRelatedTopics(propertyTypeTwo.getUri(), 0);
+                            if (results.getSize() >= 1) {
+                                for (RelatedTopic end : results.getItems()) {
+                                    if (end.getUri().equals(WikidataEntityMap.WD_ENTITY_BASE_URI + itemTwoId)) {
+                                        collection.add(result);
+                                        log.info(" .... at least " + end.getSimpleValue() + " ("+end.getUri() + ") .. at least.");
+                                    }
+                                }
+                                return collection;
+                            }
+                        } else {
+                            log.severe("### Query: Super Related Topic "+result.getSimpleValue()+" had NO ItemId via \"" + propertyTypeTwo.getSimpleValue() + "\"");
+                            ResultList<RelatedTopic> results = result.getRelatedTopics(propertyTypeTwo.getUri(), 0);
+                            log.info("  > " + results.toJSON().toString());
+                        }
+                    } else {
+                        log.severe("### Query: could not fetch ONE assocType for given " + propertyId + " BUT => "
+                            + associatedAssocTypes.getSize() + " - SKIPPING QUERY due to misconfiguration");
+                    }
+                } else {
+                    log.severe("### Query: Property with ID: " + propertyId + " NOT FOUND in DB!");
+                }
+
+            }
         }
         return null;
     }
@@ -200,6 +309,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         WikidataEntityProcessor wikidataEntityProcessor = new WikidataEntityProcessor(dms, wsService, timeOut, 
                 persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode);
         WikidataToolkitPlugin.this.startProcesssingWikidataDumpfile(wikidataEntityProcessor, noDownload);
+        wikidataEntityProcessor = null;
     }
     
     /**

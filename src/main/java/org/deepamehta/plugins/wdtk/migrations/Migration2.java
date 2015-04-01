@@ -48,7 +48,6 @@ public class Migration2 extends Migration {
         for (Topic t : topics) {
             if (t.getTypeUri().equals("dm4.core.assoc_type")) {
                 wsServices.assignTypeToWorkspace(dms.getAssociationType(t.getUri()), workspace.getId());
-                log.info("> Assigning assoc_type \"" + t.getUri() + "\" to \"Wikidata\" workspace");
             } else if (t.getTypeUri().equals("dm4.core.topic_type")) {
                 wsServices.assignTypeToWorkspace(dms.getTopicType(t.getUri()), workspace.getId());
                 log.info("> Assigning topic_type \"" + t.getUri() + "\" to \"Wikidata\" workspace");

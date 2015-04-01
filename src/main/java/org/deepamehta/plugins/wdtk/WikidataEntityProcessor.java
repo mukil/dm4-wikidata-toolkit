@@ -647,23 +647,30 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 }
                 if (playerOne != null && playerTwo != null &&
                     !associationAlreadyExists(playerOne.getId(), playerTwo.getId(), relationType)) {
+                    Topic propertyEntity = getWikidataItemByEntityId(propertyEntityId);
+                    ChildTopicsModel assocModel = null;
+                    if (propertyEntity == null) { // do create new property entity topic
+                        assocModel = new ChildTopicsModel()
+                            .add("org.deepamehta.wikidata.property", new TopicModel(
+                                    WikidataEntityMap.WD_ENTITY_BASE_URI + propertyEntityId,
+                                    "org.deepamehta.wikidata.property"));
+                    } else {
+                        assocModel = new ChildTopicsModel()
+                            .addRef("org.deepamehta.wikidata.property", propertyEntity.getId());
+                    }
                     DeepaMehtaTransaction tx = dms.beginTx();
                     try {
-                        if (getWikidataItemByEntityId(propertyEntityId) == null) { // do create new wikkidata property entity topic
-                            dms.createTopic(new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + propertyEntityId,
-                                    "org.deepamehta.wikidata.property"));
-                        }
                         relation = dms.createAssociation(new AssociationModel(relationType,
                                 new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
-                                new TopicRoleModel(playerTwo.getId(), "dm4.core.default")));
+                                new TopicRoleModel(playerTwo.getId(), "dm4.core.default"), assocModel));
                         relation.setUri(statementGUID);
-                        relation.setSimpleValue(relationName);
                         if (relation != null) {
                             log.info("Created new \""+relationType+"\" relationship for " + itemId +
                                     " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ") with GUID: \""
                                     + relation.getUri() + "\" and propertyEntityID: \"" + propertyEntityId +"\"");
                             workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
                         }
+                        // ### relation.setSimpleValue(relationName);
                         tx.success();
                     } catch (Exception e) {
                         log.log(Level.SEVERE, e.getMessage(), e);
