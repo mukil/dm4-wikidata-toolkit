@@ -25,7 +25,7 @@ of a complete Wikidata JSON Dump.
 
 ## REST API
 
-To get the REST API to respond correctly you need to associate/map the _Wikidata Property_ topics your API endpoint shall understand to the desired _Association Type_.
+To get the REST API to respond correctly you need to associate/map the _Wikidata Property_ topics your API endpoint shall understand to the desired _Association Type_. To get started you can copy [this configuration](http://wikidata-topics.beta.wmflabs.org/topicmap/1594).
 
 You can do GET requests like the following and return a simple list of JSON topics/assocations:
 
@@ -38,7 +38,9 @@ You can do GET requests like the following and return a simple list of JSON topi
 - `/wdtk/list/claims/P27/Q183`
    Responding with a list of all claims made using the _citizen of_ property where one player is the Country _Germany_
 
-For example, see http://wikidata-topics.beta.wmflabs.org/wdtk/list/P108/Q9531
+For an example, GET: 
+- http://wikidata-topics.beta.wmflabs.org/wdtk/list/P108/Q9531 or
+- http://wikidata-topics.beta.wmflabs.org/wdtk/list/claims/P108
 
 No optimizations done yet, just operating by deepamehta4 standard means (but it maybe noteworthy that @jri already solved the super-node problem for the dm4 storage layer).
 
