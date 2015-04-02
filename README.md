@@ -1,7 +1,7 @@
 
 # DeepaMehta 4 Wikidata Toolkit
 
-This plugin  provides users the functionality to process and import entities from a wikidata JSON dump file.
+This plugin provides the functionality to transform selecetd entities from a wikidata JSON dump file into DeepaMehta 4 Topics and to expose custom queries over those via a REST API.
 
 Note: This plugin makes use of the WikidataToolkit and therefore requires Java 1.7 or higher.
 
@@ -25,14 +25,20 @@ of a complete Wikidata JSON Dump.
 
 ## REST API
 
+To get the REST API to respond correctly you need to associate/map the _Wikidata Property_ topics your API endpoint shall understand to the desired _Association Type_.
+
 You can do GET requests like the following and return a simple list of JSON topics/assocations:
 
-- `/wdtk/query/P108/Q9531/`
-- `/wdtk/query/P108/Q9531/P27/Q183/`
+- `/wdtk/query/P108/Q9531/` <br/>
+   Responding with a list of _employees of_ of the _British Broadcasting Corporation_
+- `/wdtk/query/P108/Q9531/P27/Q183/`<br/>
+   Responding with a list of _employees of_ BBC which are also _citizens of_ Germany
 - `/wdtk/claims/P27`
+   Responding with a list of all claims made using the _citizen of_ property (naming both players)
 - `/wdtk/claims/P27/Q183`
+   Responding with a list of all claims made using the _citizen of_ property where one player is the Country _Germany_
 
-No optimizations done yet, just operating by deepamehta 4 standard means.
+No optimizations done yet, just operating by deepamehta4 standard means (but it maybe noteworthy that @jri already solved the super-node problem for the dm4 storage layer).
 
 ## Research & Documentation
 
