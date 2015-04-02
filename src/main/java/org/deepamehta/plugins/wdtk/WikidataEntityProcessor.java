@@ -216,7 +216,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
 
                                     // 2.4 current wikidata item is direct instanceOf|subclassOf "country" or "sovereing state"
                                     } else if (referencedItemId.equals(WikidataEntityMap.COUNTRY_ITEM)
-                                        || referencedItemId.equals(WikidataEntityMap.SOVEREIGN_STATE_ITEM)) {
+                                        || referencedItemId.equals(WikidataEntityMap.SOVEREIGN_STATE_ITEM)
+                                        || referencedItemId.equals(WikidataEntityMap.STATE_ITEM)) {
                                         if (doCountries && !all_countries.containsKey(itemId)) all_countries.put(itemId, label);
 
                                     // 2.5 current wikidata item is direct instanceOf|subclassOf "vegetable"

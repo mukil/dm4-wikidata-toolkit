@@ -28,6 +28,15 @@ public class WikidataEntityMap {
     // ---- Person
     final static String HUMAN_ITEM                   = "Q5";
     final static String PERSON_ITEM                  = "Q215627";
+    final static String GENDER_IDENTITY_ITEM         = "Q48264";
+    final static String GENDER_ITEM                  = "Q48277";
+    final static String MALE_ITEM                    = "Q6581097";
+    final static String FEMALE_ITEM                  = "Q6581072";
+    final static String GENDER_QUEER_ITEM            = "Q48270";
+    final static String INTERSEX_ITEM                = "Q1097630";
+    final static String TRANSGENDER_FEMALE_ITEM      = "Q1052281";
+    final static String TRANSGENDER_MALE_ITEM        = "Q2449503";
+    final static String MAYOR_ITEM                   = "Q30185";
     // ---- Organisation
     final static String UNIVERSITY_ITEM              = "Q3918";
     final static String ORGANISATION_ITEM            = "Q43229";
@@ -38,6 +47,7 @@ public class WikidataEntityMap {
     final static String METROPOLIS_ITEM              = "Q200250";
     final static String CAPITAL_CITY_ITEM            = "Q36";
     final static String SOVEREIGN_STATE_ITEM         = "Q3624078";
+    final static String STATE_ITEM                   = "Q7275";
     final static String COUNTRY_ITEM                 = "Q6256";
     
     
@@ -62,7 +72,10 @@ public class WikidataEntityMap {
     
     // --- Persona Related Properties
 
+    final static String IS_HEAD_OF_GOVERNMENT_OF     = "P6";
     final static String IS_SISTER_OF                 = "P9";
+    final static String IS_PLACE_OF_BIRTH            = "P19";
+    final static String IS_OF_GENDER                 = "P21";
     final static String IS_FATHER_OF                 = "P22";
     final static String IS_MOTHER_OF                 = "P25";
     final static String IS_SPOUSE_OF                 = "P26";
@@ -89,7 +102,6 @@ public class WikidataEntityMap {
     final static String IS_OFFICIAL_WEBSITE_OF       = "P856";
     final static String IS_STUDENT_OF_PERSON         = "P1066"; // doublecheck
     final static String IS_AFFILIATED_WITH           = "P1416";
-    final static String IS_HEAD_OF_GOVERNMENT_OF     = "P6";
     final static String IS_POPULATION_OF             = "P1082";
  
     // --- Institution related properties

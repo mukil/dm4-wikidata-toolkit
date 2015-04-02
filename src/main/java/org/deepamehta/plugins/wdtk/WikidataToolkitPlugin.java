@@ -1,7 +1,6 @@
 
 package org.deepamehta.plugins.wdtk;
 
-import de.deepamehta.core.Association;
 import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.RelatedAssociation;
@@ -17,12 +16,12 @@ import de.deepamehta.plugins.workspaces.service.WorkspacesService;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response.Status;
 import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
@@ -81,6 +80,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Topic importEntitiesFromWikidataDump(@PathParam("importerId") long settingsTopicId) {
+        //
+        checkAuthorization();
+        //
         Topic settings = dms.getTopic(settingsTopicId);
         importWikidataEntities(settings);
         return settings;
@@ -92,13 +94,15 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @Override
     @Transactional
     public Topic deleteAllWikidataTopics(@PathParam("importerId") long settingsTopicId) {
+        //
+        checkAuthorization();
+        //
         Topic importerSettings = dms.getTopic(settingsTopicId);
         ChildTopics settings = importerSettings.getChildTopics();
         boolean persons = settings.getBoolean(WD_IMPORT_PERSONS);
         boolean institutions = settings.getBoolean(WD_IMPORT_INSTITUTIONS);
         boolean cities = settings.getBoolean(WD_IMPORT_CITIES);
         boolean countries = settings.getBoolean(WD_IMPORT_COUNTRIES);
-        // 
         try {
             log.info("Start to remove all wikidata topics ... ");
             if (persons) { // Delete all "Person" Topics
@@ -150,7 +154,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
      *                      given item via the given property.
      */
     @GET
-    @Path("/query/{propertyId}/{itemId}")
+    @Path("/list/{propertyId}/{itemId}")
     @Produces(MediaType.APPLICATION_JSON)
     public ResultList<RelatedTopic> getRelatedTopics(@PathParam("propertyId") String propertyId,
             @PathParam("itemId") String itemId) {
@@ -192,7 +196,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
      *                      for the given property ID.
      */
     @GET
-    @Path("/claims/{propertyId}")
+    @Path("/list/claims/{propertyId}")
     @Produces(MediaType.APPLICATION_JSON)
     public ResultList<RelatedAssociation> getRelatedAssocations(@PathParam("propertyId") String propertyId) {
         Topic propertyTopic = getWikidataItemByEntityId(propertyId.trim());
@@ -213,7 +217,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
      * @return
      */
     @GET
-    @Path("/claims/{propertyId}/{itemId}")
+    @Path("/list/claims/{propertyId}/{itemId}")
     @Produces(MediaType.APPLICATION_JSON)
     public ArrayList<RelatedAssociation> getRelatedAssocationsForItem(@PathParam("propertyId") String propertyId,
             @PathParam("itemId") String itemId) {
@@ -233,10 +237,10 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
      * @param itemId
      * @param propertyTwoId
      * @param itemTwoId
-     * @return                  A list of topics relating to both wikidata items via the given property ID.
+     * @return                  A list of topics which relate to both items via the respective property ID.
      */
     @GET
-    @Path("/query/{propertyId}/{itemId}/{propertyTwoId}/{itemTwoId}")
+    @Path("/list/{propertyId}/{itemId}/and/{propertyTwoId}/{itemTwoId}")
     @Produces(MediaType.APPLICATION_JSON)
     public ArrayList<RelatedTopic> getSuperRelatedTopics(@PathParam("propertyId") String propertyId,
             @PathParam("itemId") String itemId, @PathParam("propertyTwoId") String propertyTwoId,
@@ -287,11 +291,14 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     // --- Methods to process and import topics based on a complete (daily) wikidatawiki (json) dump.
     // --
 
+    private void checkAuthorization () {
+        if (!acService.getUsername().equals("admin")) throw new WebApplicationException(Status.UNAUTHORIZED);
+    }
+
     // ### remove copy in WikidataEntityProcessor
     private Topic getWikidataItemByEntityId (String id) {
         return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id));
     }
-
         
     private void importWikidataEntities(Topic importerSettings) {
         // ### read in settings stored as child topics
@@ -354,16 +361,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         }
         entityProcessor.stop();
     }
-    
-    // --
-    // --- DeepaMehta 4 Plugin Related Private Methods
-    // --
 
-    private boolean associationExists(String edge_type, Topic item, Topic user) {
-        List<Association> results = dms.getAssociations(item.getId(), user.getId(), edge_type);
-        return (results != null) ? ((results.size() > 0) ? true : false) : false;
-    }
-    
     private String findDumpDirectoryPath() {
         // ### use Sysetm.getenv() for the best OS independent solution
         // see http://docs.oracle.com/javase/6/docs/api/java/lang/System.html

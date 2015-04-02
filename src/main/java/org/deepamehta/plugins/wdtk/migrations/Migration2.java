@@ -47,6 +47,7 @@ public class Migration2 extends Migration {
         List<Topic> topics = dms.getTopics("uri", new SimpleValue("org.deepamehta.wikidata.*"));
         for (Topic t : topics) {
             if (t.getTypeUri().equals("dm4.core.assoc_type")) {
+                log.info("> Assigning assoc_type \"" + t.getUri() + "\" to \"Wikidata\" workspace");
                 wsServices.assignTypeToWorkspace(dms.getAssociationType(t.getUri()), workspace.getId());
             } else if (t.getTypeUri().equals("dm4.core.topic_type")) {
                 wsServices.assignTypeToWorkspace(dms.getTopicType(t.getUri()), workspace.getId());
