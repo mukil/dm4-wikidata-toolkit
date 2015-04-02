@@ -38,7 +38,7 @@ You can do GET requests like the following and return a simple list of JSON topi
 - `/wdtk/list/claims/P27/Q183`
    Responding with a list of all claims made using the _citizen of_ property where one player is the Country _Germany_
 
-For example, see http://wikidata-topics.beta.wmflabs.org/wdtk/query/P108/Q9531
+For example, see http://wikidata-topics.beta.wmflabs.org/wdtk/list/P108/Q9531
 
 No optimizations done yet, just operating by deepamehta4 standard means (but it maybe noteworthy that @jri already solved the super-node problem for the dm4 storage layer).
 
