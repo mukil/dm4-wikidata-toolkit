@@ -617,8 +617,8 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             Topic website = dms.createTopic(urlmodel);
             if (website != null && topic != null) {
                 dms.createAssociation(new AssociationModel("dm4.core.association",
-                    new TopicRoleModel(topic.getId(), "dm4.core.default"), 
-                    new TopicRoleModel(website.getId(), "dm4.core.default")));
+                    new TopicRoleModel(topic.getId(), "dm4.core.parent"),
+                    new TopicRoleModel(website.getId(), "dm4.core.child")));
                 workspaceService.assignToWorkspace(website, wikidataWorkspace.getId());
             }
             tx.success();
@@ -636,18 +636,18 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         for (String itemId : relations.keySet()) {
             HashMap<String, String> referenceMap = relations.get(itemId);
             Association relation = null;
-            Topic playerTwo = null, playerOne = null;
+            Topic toPlayer = null, fromPlayer = null;
             // Key: Topic ID, Value: Statemend-UID
             for (String relatedEntityId : referenceMap.keySet()) {
                 String statementValueCode = referenceMap.get(relatedEntityId);
                 String statementGUID = statementValueCode.split(WikidataEntityMap.URI_SEPERATOR)[0];
                 String propertyEntityId = statementValueCode.split(WikidataEntityMap.URI_SEPERATOR)[1];
                 if (relatedEntityId.startsWith("T")) {
-                    playerTwo = dms.getTopic(Long.parseLong(relatedEntityId.substring(1)));
-                    playerOne = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
+                    toPlayer = dms.getTopic(Long.parseLong(relatedEntityId.substring(1)));
+                    fromPlayer = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
                 }
-                if (playerOne != null && playerTwo != null &&
-                    !associationAlreadyExists(playerOne.getId(), playerTwo.getId(), relationType)) {
+                if (fromPlayer != null && toPlayer != null &&
+                    !associationAlreadyExists(fromPlayer.getId(), toPlayer.getId(), relationType)) {
                     Topic propertyEntity = getWikidataItemByEntityId(propertyEntityId);
                     ChildTopicsModel assocModel = null;
                     if (propertyEntity == null) { // do create new property entity topic
@@ -662,12 +662,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                     DeepaMehtaTransaction tx = dms.beginTx();
                     try {
                         relation = dms.createAssociation(new AssociationModel(relationType,
-                                new TopicRoleModel(playerOne.getId(), "dm4.core.default"),
-                                new TopicRoleModel(playerTwo.getId(), "dm4.core.default"), assocModel));
+                                new TopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
+                                new TopicRoleModel(toPlayer.getId(), "dm4.core.child"), assocModel));
                         relation.setUri(statementGUID);
                         if (relation != null) {
                             log.info("Created new \""+relationType+"\" relationship for " + itemId +
-                                    " to " + playerTwo.getId() + " (" + playerTwo.getSimpleValue() + ") with GUID: \""
+                                    " to " + toPlayer.getId() + " (" + toPlayer.getSimpleValue() + ") with GUID: \""
                                     + relation.getUri() + "\" and propertyEntityID: \"" + propertyEntityId +"\"");
                             workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
                         }

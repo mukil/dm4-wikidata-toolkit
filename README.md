@@ -1,9 +1,11 @@
 
 # DeepaMehta 4 Wikidata Toolkit
 
-This plugin provides the functionality to transform selecetd entities from a wikidata JSON dump file into DeepaMehta 4 Topics and to expose custom queries over those via a REST API.
+This plugin provides the functionality to transform selected entities from a wikidata JSON dump file into DeepaMehta 4 Topics and to expose custom queries over those by means of a REST API.
 
-Note: This plugin makes use of the WikidataToolkit and therefore requires Java 1.7 or higher.
+For a detailed and complete description of what this module does, how it works and can be customized please read [this blogpost](http://infokitchen.net/building-a-microservice-for-querying-wikidata/).
+
+Note: This plugin makes use of the WikidataToolkit and therefore _requires_ Java 1.7 or higher.
 
 ## Requirements
 
@@ -31,7 +33,7 @@ You can do GET requests like the following and return a simple list of JSON topi
 
 - `/wdtk/list/P108/Q9531/` <br/>
    Responding with a list of _employees of_ of the _British Broadcasting Corporation_
-- `/wdtk/list/P108/Q9531/and/P27/Q183/`<br/>
+- `/wdtk/list/P108/Q9531/with/P27/Q183/`<br/>
    Responding with a list of _employees of_ BBC which are also _citizens of_ Germany
 - `/wdtk/list/claims/P108`
    Responding with a list of all claims made using the _employee of_ property (naming both players)
@@ -54,7 +56,7 @@ This software is released under the terms of the GNU General Public License in V
 
 # Version History
 
-0.2, Upcoming
+0.2, 13. April 2015
 - Importing _Persons_, _Institutions_, _Cities_ and _Countries_ (using the _instance of_ property)
   with a label, description and a webpage URL (if provided as "official website")
 - Importing of five custom relation-types between persons, institutions, cities and countries:<\br>

@@ -156,6 +156,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @GET
     @Path("/list/{propertyId}/{itemId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public ResultList<RelatedTopic> getRelatedTopics(@PathParam("propertyId") String propertyId,
             @PathParam("itemId") String itemId) {
         Topic item = getWikidataItemByEntityId(itemId);
@@ -198,7 +199,8 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @GET
     @Path("/list/claims/{propertyId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResultList<RelatedAssociation> getRelatedAssocations(@PathParam("propertyId") String propertyId) {
+    @Override
+    public ResultList<RelatedAssociation> getRelatedAssociations(@PathParam("propertyId") String propertyId) {
         Topic propertyTopic = getWikidataItemByEntityId(propertyId.trim());
         if (propertyTopic != null) {
             log.info("### Query Wikidata Claims by property \"" + propertyTopic.getUri() + "\"");
@@ -219,11 +221,12 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @GET
     @Path("/list/claims/{propertyId}/{itemId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<RelatedAssociation> getRelatedAssocationsForItem(@PathParam("propertyId") String propertyId,
+    @Override
+    public ArrayList<RelatedAssociation> getRelatedAssociationsForItem(@PathParam("propertyId") String propertyId,
             @PathParam("itemId") String itemId) {
         Topic item = getWikidataItemByEntityId(itemId.trim());
         ArrayList<RelatedAssociation> collection = new ArrayList<RelatedAssociation>();
-        ResultList<RelatedAssociation> claims = getRelatedAssocations(propertyId);
+        ResultList<RelatedAssociation> claims = getRelatedAssociations(propertyId);
         for (RelatedAssociation claim : claims.getItems()) {
             if (claim.getPlayer1().getId() == item.getId() ||
                 claim.getPlayer2().getId() == item.getId()) collection.add(claim);
@@ -240,8 +243,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
      * @return                  A list of topics which relate to both items via the respective property ID.
      */
     @GET
-    @Path("/list/{propertyId}/{itemId}/and/{propertyTwoId}/{itemTwoId}")
+    @Path("/list/{propertyId}/{itemId}/with/{propertyTwoId}/{itemTwoId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Override
     public ArrayList<RelatedTopic> getSuperRelatedTopics(@PathParam("propertyId") String propertyId,
             @PathParam("itemId") String itemId, @PathParam("propertyTwoId") String propertyTwoId,
             @PathParam("itemTwoId") String itemTwoId) {
@@ -329,7 +333,6 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
      * in this dump
      */
     private void startProcesssingWikidataDumpfile(WikidataEntityProcessor entityProcessor, boolean noDownload) {
-        
         if (isCurrentlyImporting == true) {
             log.warning("One WDTK DumpFileProcessor is already running, please try again later.");
             return;

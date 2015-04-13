@@ -54,8 +54,11 @@ public class WikidataEntityMap {
     // --- Food related items
     
     final static String VEGETABLE                    = "Q11004";
+    final static String NUT                          = "Q11009";
     final static String HERB                         = "Q207123";
     final static String FUNGI                        = "Q764";
+    final static String MUSHROOM                     = "Q83093";
+    final static String EDIBLE_FUNGI                 = "Q654236";
     final static String FOOD_FRUIT                   = "Q3314483";
     
     
