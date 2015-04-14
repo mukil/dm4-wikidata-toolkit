@@ -20,10 +20,11 @@ Copy the downloaded `dm45-wikidata-toolkit-0.2.jar` file into your DeepaMehta bu
 
 ## Usage
 
-Find, edit and use the commands provided by any topic of type "Wikidata Dump Import" to
-* start importing or removing certain entities and/or
-* control aspects of the "to-be-imported" data-values (like language) and relations (like websites)
-of a complete Wikidata JSON Dump.
+1 Download one of the json dumps from  [http://dumps.wikimedia.org/other/wikidata/](http://dumps.wikimedia.org/other/wikidata/).
+
+2 Find (, probably edit) and use the commands provided by any topic of type "Wikidata Dump Import". It provides two commands to 
+* Start importing (`Create topics`) or removing wikidata entities as configured (`Delete topics`)
+* Control aspects (via `Edit` of the "to-be-imported" data-values (like language) and relations (like websites)
 
 ## REST API
 
@@ -56,7 +57,7 @@ This software is released under the terms of the GNU General Public License in V
 
 # Version History
 
-0.2, 13. April 2015
+0.2, 14. April 2015
 - Importing _Persons_, _Institutions_, _Cities_ and _Countries_ (using the _instance of_ property)
   with a label, description and a webpage URL (if provided as "official website")
 - Importing of five custom relation-types between persons, institutions, cities and countries:<\br>
