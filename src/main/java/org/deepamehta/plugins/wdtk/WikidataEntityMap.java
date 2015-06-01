@@ -68,11 +68,43 @@ public class WikidataEntityMap {
     final static String IS_SUBCLASS_OF               = "P279";
     final static String STARTED_AT                   = "P580";
     final static String ENDED_AT                     = "P582";
+    final static String POINT_IN_TIME                = "P585";
     final static String GEO_COORDINATES              = "P625";
     final static String IS_COUNTRY                   = "P17";
-    
-    
-    
+    final static String INCOME_CLASSIFICATION        = "P1879";
+
+
+
+    // --- Administrative, geo-political properties around territories
+
+    final static String IS_CAPITAL                   = "P36";
+    final static String IS_FORM_OF_GOVERNMENT        = "P122";
+    final static String IS_LOCATED_IN_ADMIN_T        = "P131";
+    //
+    final static String HEAD_OF_STATE                = "P35";
+    final static String LEGISLATIVE_BODY             = "P194";
+    final static String TERRITORY_CLAIMED_BY         = "P1336";
+    final static String SHARES_BORDER_WITH           = "P47";
+    final static String APPLIES_TO_JURISDICTION      = "P1001";
+    final static String OSM_RELATION_ID              = "P402";
+    final static String IS_ISO_TWO_LETTERS_CODE      = "P297";
+    final static String IS_ISO_THREE_LETTER_CODE     = "P298";
+    final static String IS_POPULATION_VALUE          = "P1082";
+    //
+    final static String CONTAINS_ADMIN_T_ENTITY      = "P150";
+    final static String CONTAINS_SETTLEMENT          = "P1383";
+    final static String IS_EXCLAVE_OF                = "P500";
+    final static String IS_ENCLAVE_WITHIN            = "P501";
+    final static String PARTY_CHIEF_IN_ADMIN         = "P210";
+    final static String IS_MAINTAINED_BY             = "P126";
+    final static String IS_OWNED_BY                  = "P127";
+    final static String COORDINATE_NORTHERMOST       = "P1332";
+    final static String COORDINATE_SOUTHERNMOST      = "P1333";
+    final static String COORDINATE_EASTERNMOST       = "P1334";
+    final static String COORDINATE_WESTERNMOST       = "P1335";
+    final static String IS_DETAIL_MAP_IMAGE          = "P242";
+
+
     // --- Persona Related Properties
 
     final static String IS_HEAD_OF_GOVERNMENT_OF     = "P6";
@@ -96,7 +128,6 @@ public class WikidataEntityMap {
     final static String CAUSE_OF_DEATH               = "P509";
     final static String WAS_BORN_ON                  = "P569";
     final static String IS_DEAD_SINCE                = "P570";
-    final static String IS_COORDINATE_LOCATION       = "P625";
     final static String IS_PARTICIPANT_OF            = "P710";
     final static String IS_SURNAME_OF                = "P734";
     final static String IS_GIVEN_NAME_OF             = "P735";
