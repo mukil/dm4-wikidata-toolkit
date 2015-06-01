@@ -23,6 +23,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
+import org.wikidata.wdtk.datamodel.interfaces.EntityDocumentProcessor;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
 
@@ -317,7 +318,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean descriptions = childs.getBoolean(WD_IMPORT_DESCRIPTIONS);
         boolean websites = childs.getBoolean(WD_IMPORT_WEBSITES);
         boolean geoCoordinates = childs.getBoolean(WD_IMPORT_COORDINATES);
-        WikidataEntityProcessor wikidataEntityProcessor = new WikidataEntityProcessor(dms, wsService, timeOut, 
+        WikidataGeodataProcessor wikidataEntityProcessor = new WikidataGeodataProcessor(dms, wsService, timeOut, 
                 persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode);
         WikidataToolkitPlugin.this.startProcesssingWikidataDumpfile(wikidataEntityProcessor, noDownload);
         wikidataEntityProcessor = null;
@@ -332,7 +333,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
      * @param   noDownload     if set to true only dumpfiles already stored on disk are considered for import
      * in this dump
      */
-    private void startProcesssingWikidataDumpfile(WikidataEntityProcessor entityProcessor, boolean noDownload) {
+    private void startProcesssingWikidataDumpfile(WikidataGeodataProcessor entityProcessor, boolean noDownload) {
         if (isCurrentlyImporting == true) {
             log.warning("One WDTK DumpFileProcessor is already running, please try again later.");
             return;
