@@ -50,6 +50,10 @@ public class WikidataEntityMap {
     final static String STATE_ITEM                   = "Q7275";
     final static String COUNTRY_ITEM                 = "Q6256";
     
+    // --- Geographical types
+
+    final static String PRINCIPALITY_ITEM            = "Q208500";
+
     
     // --- Food related items
     
@@ -64,32 +68,35 @@ public class WikidataEntityMap {
     
     // --- Generic Wikidata Properties
     
+    final static String IS_COUNTRY                   = "P17";
     final static String IS_INSTANCE_OF               = "P31";
     final static String IS_SUBCLASS_OF               = "P279";
-    final static String STARTED_AT                   = "P580";
-    final static String ENDED_AT                     = "P582";
-    final static String POINT_IN_TIME                = "P585";
+    final static String INCEPTION                    = "P571";
+    final static String STARTED_AT                   = "P580"; // often used to qualify
+    final static String ENDED_AT                     = "P582"; // often used to qualify
+    final static String POINT_IN_TIME                = "P585"; // often used to qualify
     final static String GEO_COORDINATES              = "P625";
-    final static String IS_COUNTRY                   = "P17";
-    final static String INCOME_CLASSIFICATION        = "P1879";
+    final static String IS_DENONYM                   = "P1549";
+    final static String GEO_NAMES_ID                 = "P1566";
+    final static String INCOME_CLASSIFICATION_PHI    = "P1879";
 
 
 
     // --- Administrative, geo-political properties around territories
 
-    final static String IS_CAPITAL                   = "P36";
+    final static String IS_CAPITAL                   = "P36"; // country, region
     final static String IS_FORM_OF_GOVERNMENT        = "P122";
     final static String IS_LOCATED_IN_ADMIN_T        = "P131";
     //
     final static String HEAD_OF_STATE                = "P35";
-    final static String LEGISLATIVE_BODY             = "P194";
+    final static String LEGISLATIVE_BODY             = "P194"; // country, region
     final static String TERRITORY_CLAIMED_BY         = "P1336";
     final static String SHARES_BORDER_WITH           = "P47";
     final static String APPLIES_TO_JURISDICTION      = "P1001";
     final static String OSM_RELATION_ID              = "P402";
     final static String IS_ISO_TWO_LETTERS_CODE      = "P297";
     final static String IS_ISO_THREE_LETTER_CODE     = "P298";
-    final static String IS_POPULATION_VALUE          = "P1082";
+    final static String IS_POPULATION_VALUE          = "P1082"; // has most probably MANY POITs related
     //
     final static String CONTAINS_ADMIN_T_ENTITY      = "P150";
     final static String CONTAINS_SETTLEMENT          = "P1383";
@@ -103,9 +110,6 @@ public class WikidataEntityMap {
     final static String COORDINATE_EASTERNMOST       = "P1334";
     final static String COORDINATE_WESTERNMOST       = "P1335";
     final static String IS_DETAIL_MAP_IMAGE          = "P242";
-
-
-    // --- Persona Related Properties
 
     final static String IS_HEAD_OF_GOVERNMENT_OF     = "P6";
     final static String IS_SISTER_OF                 = "P9";
@@ -123,7 +127,7 @@ public class WikidataEntityMap {
     final static String IS_DOCTORAL_ADVISOR_OF       = "P184";
     final static String IS_DOCTORAL_STUDENT_OF       = "P185";
     final static String IS_OFFICIALLY_RESIDING_AT    = "P263";
-    final static String IS_MEMBER_OF                 = "P463";
+    final static String IS_MEMBER_OF                 = "P463"; // countries.. too
     final static String IS_OPEN_RESEARCH_ID_OF       = "P496";
     final static String CAUSE_OF_DEATH               = "P509";
     final static String WAS_BORN_ON                  = "P569";

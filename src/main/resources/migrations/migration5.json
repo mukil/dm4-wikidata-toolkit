@@ -1,0 +1,117 @@
+{
+    "topic_types": [
+        {
+            "value": "Wikidata Text",
+            "uri": "org.deepamehta.wikidata.text",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Number",
+            "uri": "org.deepamehta.wikidata.number",
+            "data_type_uri": "dm4.core.number",
+            "index_mode_uris": ["dm4.core.key"],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Start Time",
+            "uri": "org.deepamehta.wikidata.start_time",
+            "index_mode_uris": ["dm4.core.key"],
+            "data_type_uri": "dm4.core.number",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata End Time",
+            "uri": "org.deepamehta.wikidata.end_time",
+            "index_mode_uris": ["dm4.core.key"],
+            "data_type_uri": "dm4.core.number",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        },
+        {
+            "value": "Wikidata Time Range",
+            "uri": "org.deepamehta.wikidata.time_range",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.start_time",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                },
+                {
+                    "child_type_uri": "org.deepamehta.wikidata.end_time",
+                    "child_cardinality_uri": "dm4.core.one",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "assoc_type_uri": "dm4.core.aggregation_def"
+                }
+            ],
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.show_in_create_menu": false,
+                        "dm4.webclient.searchable_as_unit": false,
+                        "dm4.webclient.input_field_rows": 1,
+                        "dm4.webclient.locked": true
+                    }
+                }
+            ]
+        }
+    ],
+    "assoc_types": [
+        {
+            "value": "Wikidata Claim",
+            "uri": "org.deepamehta.wikidata.claim_edge",
+            "data_type_uri": "dm4.core.composite",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#006699"
+                    }
+                }
+            ]
+        }
+    ]
+}

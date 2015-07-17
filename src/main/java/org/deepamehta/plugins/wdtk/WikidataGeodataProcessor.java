@@ -115,7 +115,12 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 
                 boolean isInstanceOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_INSTANCE_OF);
                 boolean isSubclassOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_SUBCLASS_OF);
+                // ?principiality?
                 boolean isCoordinateOf = sg.getProperty().getId().equals(WikidataEntityMap.GEO_COORDINATES);
+                boolean isISoThreeLetterCode = sg.getProperty().getId().equals(WikidataEntityMap.IS_ISO_THREE_LETTER_CODE);
+                boolean isCapital = sg.getProperty().getId().equals(WikidataEntityMap.IS_CAPITAL);
+                boolean isCountry = sg.getProperty().getId().equals(WikidataEntityMap.IS_COUNTRY);
+                boolean containsAdministrativeEntity = sg.getProperty().getId().equals(WikidataEntityMap.CONTAINS_ADMIN_T_ENTITY);
                 boolean isGivenNameOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_GIVEN_NAME_OF);
                 boolean isSurnameOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_SURNAME_OF);
                 boolean isBirthDateOf = sg.getProperty().getId().equals(WikidataEntityMap.WAS_BORN_ON);
