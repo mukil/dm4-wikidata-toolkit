@@ -112,6 +112,20 @@
                     }
                 }
             ]
+        },
+        {
+            "value": "Wikidata ISO Three Letter Code",
+            "uri": "org.deepamehta.wikidata.iso_three_letter_code",
+            "index_mode_uris": ["dm4.core.key"],
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
+                {
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.color": "#006699"
+                    }
+                }
+            ]
         }
     ]
 }

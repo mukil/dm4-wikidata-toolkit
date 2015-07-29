@@ -24,6 +24,7 @@ import org.wikidata.wdtk.datamodel.interfaces.MonolingualTextValue;
 import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument;
 import org.wikidata.wdtk.datamodel.interfaces.Statement;
 import org.wikidata.wdtk.datamodel.interfaces.StatementGroup;
+import org.wikidata.wdtk.datamodel.interfaces.StringValue;
 import org.wikidata.wdtk.datamodel.interfaces.TimeValue;
 import org.wikidata.wdtk.datamodel.interfaces.Value;
 import org.wikidata.wdtk.datamodel.interfaces.ValueSnak;
@@ -117,7 +118,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 boolean isSubclassOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_SUBCLASS_OF);
                 // ?principiality?
                 boolean isCoordinateOf = sg.getProperty().getId().equals(WikidataEntityMap.GEO_COORDINATES);
-                boolean isISoThreeLetterCode = sg.getProperty().getId().equals(WikidataEntityMap.IS_ISO_THREE_LETTER_CODE);
+                boolean isISOThreeLetterCode = sg.getProperty().getId().equals(WikidataEntityMap.IS_ISO_THREE_LETTER_CODE);
                 boolean isCapital = sg.getProperty().getId().equals(WikidataEntityMap.IS_CAPITAL);
                 boolean isCountry = sg.getProperty().getId().equals(WikidataEntityMap.IS_COUNTRY);
                 boolean containsAdministrativeEntity = sg.getProperty().getId().equals(WikidataEntityMap.CONTAINS_ADMIN_T_ENTITY);
@@ -146,7 +147,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 
                 // 1.1) Record various "attributes" of the current item
 
-                // -- is instance | subclass of
+                // -- StatementGroup of propertyType is instance | subclass of
 
                 if (isInstanceOf || isSubclassOf) {
                     for (Statement s : sg.getStatements()) {
@@ -223,6 +224,17 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                         }
                     }
 
+                } else if (isISOThreeLetterCode) {
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            if (mainSnakValue instanceof StringValue) {
+                                StringValue dateValue = (StringValue) mainSnakValue; // ### respect calendermodel
+                                log.fine("### NEW: ISO Three Letter Code: " + dateValue);
+                            }
+                        }
+                    }
+
                 } else if (isBirthDateOf || isDeathDateOf) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
@@ -234,7 +246,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                             }
                         }
                     }
-                
+
                 } else if (isGivenNameOf || isSurnameOf) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
