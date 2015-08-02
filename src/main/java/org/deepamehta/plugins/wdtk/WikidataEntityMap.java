@@ -13,7 +13,7 @@ public class WikidataEntityMap {
     final static String WD_TYPE_ITEM                 = "item";
     final static String WD_TYPE_PROPERTY             = "property";
     final static String WD_TYPE_GLOBE_COORDINATES    = "globe-coordinates";
-    final static String WD_ENTITY_BASE_URI           = "org.wikidata.entity.";
+    public final static String WD_ENTITY_BASE_URI    = "http://www.wikidata.org/entity/";
     final static String URI_SEPERATOR                = ":";
     
     
@@ -44,6 +44,7 @@ public class WikidataEntityMap {
     final static String COLLEGIATE_UNIVERSITY_ITEM   = "Q3354859";
     // ---- City
     final static String CITY_ITEM                    = "Q515";
+    final static String BIG_CITY_ITEM                = "Q1549591"; // yet unused
     final static String METROPOLIS_ITEM              = "Q200250";
     final static String CAPITAL_CITY_ITEM            = "Q36";
     final static String SOVEREIGN_STATE_ITEM         = "Q3624078";
@@ -53,8 +54,10 @@ public class WikidataEntityMap {
     // --- Geographical types
 
     final static String PRINCIPALITY_ITEM            = "Q208500";
+    final static String POLITICAL_TERRITORIAL_ENTITY = "Q1048835";
 
-    
+
+
     // --- Food related items
     
     final static String VEGETABLE                    = "Q11004";
@@ -68,12 +71,12 @@ public class WikidataEntityMap {
     
     // --- Generic Wikidata Properties
     
-    final static String IS_COUNTRY                   = "P17";
+    public final static String IS_COUNTRY            = "P17";
     final static String IS_INSTANCE_OF               = "P31";
     final static String IS_SUBCLASS_OF               = "P279";
     final static String INCEPTION                    = "P571";
-    final static String STARTED_AT                   = "P580"; // often used to qualify
-    final static String ENDED_AT                     = "P582"; // often used to qualify
+    final static String STARTED_AT                   = "P580"; // often used to qualify / subproperty
+    final static String ENDED_AT                     = "P582"; // often used to qualify / subproperty
     final static String POINT_IN_TIME                = "P585"; // often used to qualify
     final static String GEO_COORDINATES              = "P625";
     final static String IS_DENONYM                   = "P1549";
@@ -84,9 +87,9 @@ public class WikidataEntityMap {
 
     // --- Administrative, geo-political properties around territories
 
-    final static String IS_CAPITAL                   = "P36"; // country, region
+    public final static String IS_CAPITAL            = "P36"; // country, region
     final static String IS_FORM_OF_GOVERNMENT        = "P122";
-    final static String IS_LOCATED_IN_ADMIN_T        = "P131";
+    public final static String IS_LOCATED_IN_ADMIN_T = "P131";
     //
     final static String HEAD_OF_STATE                = "P35";
     final static String LEGISLATIVE_BODY             = "P194"; // country, region
@@ -96,12 +99,15 @@ public class WikidataEntityMap {
     final static String OSM_RELATION_ID              = "P402";
     final static String IS_ISO_TWO_LETTERS_CODE      = "P297";
     final static String IS_ISO_THREE_LETTER_CODE     = "P298";
+    final static String IS_ISO_SUB_REGION_CODE       = "P300";
+    final static String IS_NUTS_CODE                 = "P605";
     final static String IS_POPULATION_VALUE          = "P1082"; // has most probably MANY POITs related
     //
-    final static String CONTAINS_ADMIN_T_ENTITY      = "P150";
+    public final static String CONTAINS_ADMIN_T_ENTITY  = "P150";
     final static String CONTAINS_SETTLEMENT          = "P1383";
     final static String IS_EXCLAVE_OF                = "P500";
     final static String IS_ENCLAVE_WITHIN            = "P501";
+    final static String IS_SISTER_CITY               = "P190"; // yet unused
     final static String PARTY_CHIEF_IN_ADMIN         = "P210";
     final static String IS_MAINTAINED_BY             = "P126";
     final static String IS_OWNED_BY                  = "P127";
@@ -114,11 +120,13 @@ public class WikidataEntityMap {
     final static String IS_HEAD_OF_GOVERNMENT_OF     = "P6";
     final static String IS_SISTER_OF                 = "P9";
     final static String IS_PLACE_OF_BIRTH            = "P19";
+    final static String IS_PLACE_OF_DEATH            = "P20"; // unused
     final static String IS_OF_GENDER                 = "P21";
     final static String IS_FATHER_OF                 = "P22";
     final static String IS_MOTHER_OF                 = "P25";
     final static String IS_SPOUSE_OF                 = "P26";
     final static String IS_CITIZEN_OF                = "P27";
+    final static String IS_RESIDENCE_OF              = "P551";
     final static String IS_CHILD_OF                  = "P40";
     final static String IS_ALMA_MATER_OF             = "P69";
     final static String IS_PARTY_MEMBER_OF           = "P102";

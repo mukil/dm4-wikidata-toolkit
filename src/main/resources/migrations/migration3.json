@@ -18,7 +18,7 @@
         {
             "value": "Wikidata Label Value",
             "uri": "org.deepamehta.wikidata.label_value",
-            "index_mode_uris": ["dm4.core.fulltext_key", "dm4.core.key"],
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -33,7 +33,7 @@
         {
             "value": "Wikidata Description Value",
             "uri": "org.deepamehta.wikidata.description_value",
-            "index_mode_uris": ["dm4.core.fulltext_key", "dm4.core.key"],
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -48,7 +48,7 @@
         {
             "value": "Wikidata Alias Value",
             "uri": "org.deepamehta.wikidata.alias_value",
-            "index_mode_uris": ["dm4.core.fulltext_key", "dm4.core.key"],
+            "index_mode_uris": ["dm4.core.fulltext", "dm4.core.key"],
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -134,9 +134,9 @@
                 },
                 {
                     "child_type_uri": "dm4.geomaps.geo_coordinate",
-                    "child_cardinality_uri": "dm4.core.many",
+                    "child_cardinality_uri": "dm4.core.one",
                     "parent_cardinality_uri": "dm4.core.one",
-                    "assoc_type_uri": "dm4.core.aggregation_def"
+                    "assoc_type_uri": "dm4.core.composition_def"
                 }
             ],
             "view_config_topics": [

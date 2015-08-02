@@ -11,7 +11,9 @@ import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
-import java.util.HashMap;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,12 +24,16 @@ import org.wikidata.wdtk.datamodel.interfaces.GlobeCoordinatesValue;
 import org.wikidata.wdtk.datamodel.interfaces.ItemDocument;
 import org.wikidata.wdtk.datamodel.interfaces.MonolingualTextValue;
 import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument;
+import org.wikidata.wdtk.datamodel.interfaces.PropertyIdValue;
+import org.wikidata.wdtk.datamodel.interfaces.Snak;
+import org.wikidata.wdtk.datamodel.interfaces.SnakGroup;
 import org.wikidata.wdtk.datamodel.interfaces.Statement;
 import org.wikidata.wdtk.datamodel.interfaces.StatementGroup;
 import org.wikidata.wdtk.datamodel.interfaces.StringValue;
 import org.wikidata.wdtk.datamodel.interfaces.TimeValue;
 import org.wikidata.wdtk.datamodel.interfaces.Value;
 import org.wikidata.wdtk.datamodel.interfaces.ValueSnak;
+import org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueTime;
 import org.wikidata.wdtk.util.Timer;
 
 /**
@@ -119,19 +125,31 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 // ?principiality?
                 boolean isCoordinateOf = sg.getProperty().getId().equals(WikidataEntityMap.GEO_COORDINATES);
                 boolean isISOThreeLetterCode = sg.getProperty().getId().equals(WikidataEntityMap.IS_ISO_THREE_LETTER_CODE);
+                // boolean isISOSubregionCode = sg.getProperty().getId().equals(WikidataEntityMap.IS_ISO_SUB_REGION_CODE);
+                boolean isNUTSCode = sg.getProperty().getId().equals(WikidataEntityMap.IS_NUTS_CODE);
+                boolean isOSMRelationIdentifier = sg.getProperty().getId().equals(WikidataEntityMap.OSM_RELATION_ID);
+                //
                 boolean isCapital = sg.getProperty().getId().equals(WikidataEntityMap.IS_CAPITAL);
                 boolean isCountry = sg.getProperty().getId().equals(WikidataEntityMap.IS_COUNTRY);
-                boolean containsAdministrativeEntity = sg.getProperty().getId().equals(WikidataEntityMap.CONTAINS_ADMIN_T_ENTITY);
-                boolean isGivenNameOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_GIVEN_NAME_OF);
+                //
+                /** boolean isLocatedHQ = sg.getProperty().getId().equals(WikidataEntityMap.LOCATION_OF_HEADQUARTER);
+                boolean isLocatedFO = sg.getProperty().getId().equals(WikidataEntityMap.LOCATION_OF_FORMATION); **/
+                //
+                boolean isCitizenOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_CITIZEN_OF);
+                boolean isResidenceOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_RESIDENCE_OF);
+                //
+                boolean containsAdministrativeEntity = sg.getProperty().getId().equals(WikidataEntityMap.CONTAINS_ADMIN_T_ENTITY); // down the hierarchy
+                boolean locatedInAdministrativeEntity = sg.getProperty().getId().equals(WikidataEntityMap.IS_LOCATED_IN_ADMIN_T);  // up the hierarchy
+                //
+                /** boolean isGivenNameOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_GIVEN_NAME_OF);
                 boolean isSurnameOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_SURNAME_OF);
                 boolean isBirthDateOf = sg.getProperty().getId().equals(WikidataEntityMap.WAS_BORN_ON);
-                boolean isDeathDateOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DEAD_SINCE);
-                // 
+                boolean isDeathDateOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DEAD_SINCE); **/
+                //
                 boolean isEmployeeOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_EMPLOYEE_OF);
                 /** boolean isPartyMemberOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_PARTY_MEMBER_OF);
                 boolean isOfficiallyResidingAt = sg.getProperty().getId().equals(WikidataEntityMap.IS_OFFICIALLY_RESIDING_AT);
                 boolean isMemberOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_MEMBER_OF);
-                boolean isCitizenOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_CITIZEN_OF);
                 // boolean isAlmaMaterOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_ALMA_MATER_OF);
                 boolean isStudentOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_STUDENT_OF_PERSON);
                 boolean isDoctoralAdvisorOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DOCTORAL_ADVISOR_OF);
@@ -168,32 +186,34 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                                     // 2.1 current wikidata item is direct instanceOf|subclassOf "human" or "person"
                                     if (referencedItemId.equals(WikidataEntityMap.HUMAN_ITEM)
                                         || referencedItemId.equals(WikidataEntityMap.PERSON_ITEM)) {
-                                        // if (doPersons) createPerson();
+                                        if (doPersons) {
+                                            updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                        }
 
                                     // 2.2 current wikidata item is direct instanceOf|subclassOf "university", "company" or "organisation"
                                     } else if (referencedItemId.equals(WikidataEntityMap.COMPANY_ITEM)
                                         || referencedItemId.equals(WikidataEntityMap.UNIVERSITY_ITEM)
                                         || referencedItemId.equals(WikidataEntityMap.ORGANISATION_ITEM)
                                         || referencedItemId.equals(WikidataEntityMap.COLLEGIATE_UNIVERSITY_ITEM)) { // = often subclass of "university" items
-                                        if (doInstitutions) //
-                                        log.info(".. doInstitution");
-                                        updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                        if (doInstitutions) {
+                                            updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                        }
 
                                     // 2.3 current wikidata item is direct instanceOf|subclassOf "city", "metro" or "capital"
                                     } else if (referencedItemId.equals(WikidataEntityMap.CITY_ITEM)
                                         || referencedItemId.equals(WikidataEntityMap.METROPOLIS_ITEM)
                                         || referencedItemId.equals(WikidataEntityMap.CAPITAL_CITY_ITEM)) {
-                                        if (doCities) //
-                                        log.info(".. doCity");
-                                        updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                        if (doCities) {
+                                            updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                        }
 
                                     // 2.4 current wikidata item is direct instanceOf|subclassOf "country" or "sovereing state"
                                     } else if (referencedItemId.equals(WikidataEntityMap.COUNTRY_ITEM)
                                         || referencedItemId.equals(WikidataEntityMap.SOVEREIGN_STATE_ITEM)
                                         || referencedItemId.equals(WikidataEntityMap.STATE_ITEM)) {
-                                        if (doCountries) // && !all_countries.containsKey(itemId)) all_countries.put(itemId, label);
-                                        log.info(".. doCountry");
-                                        updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                        if (doCountries) { // && !all_countries.containsKey(itemId)) all_countries.put(itemId, label);
+                                            updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                        }
 
                                     }
 
@@ -213,10 +233,10 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                                 double longitude = coordinateValues.getLatitude();
                                 double latitude = coordinateValues.getLongitude();
                                 // note: coordinateValues.getGlobe().contains("Q2) == Planet Earth
-                                log.info("### Parsing geo-coordinates " + coordinateValues.getLatitude()
-                                        + ", " + coordinateValues.getLongitude() + " of item " + label + "(itemId=" + itemId + ")");
+                                // every item with a coordinate gets a label and description UPDATE
+                                updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
                                 if (longitude != -1 && latitude != -1) {
-                                    double coordinates[] = {longitude, latitude};
+                                    double coordinates[] = {latitude, longitude};
                                     // do Coordinates
                                     attachGeoCoordinates(coordinates, itemId);
                                 }
@@ -224,18 +244,163 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                         }
                     }
 
+                // ### isRegion (Administrative Subregion) via hasCode?
+
                 } else if (isISOThreeLetterCode) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof StringValue) {
-                                StringValue dateValue = (StringValue) mainSnakValue; // ### respect calendermodel
-                                log.fine("### NEW: ISO Three Letter Code: " + dateValue);
+                                StringValue codeValue = (StringValue) mainSnakValue; // ### respect calendermodel
+                                createCountryCodeRelation(codeValue.toString(), itemId, s.getStatementId());
                             }
                         }
                     }
 
-                } else if (isBirthDateOf || isDeathDateOf) {
+                } else if (isNUTSCode) {
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            if (mainSnakValue instanceof StringValue) {
+                                StringValue codeValue = (StringValue) mainSnakValue; // ### respect calendermodel
+                                updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                createNUTSCodeRelation(codeValue.toString(), itemId, s.getStatementId());
+                            }
+                        }
+                    }
+
+                } else if (isOSMRelationIdentifier) {
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            if (mainSnakValue instanceof StringValue) {
+                                StringValue codeValue = (StringValue) mainSnakValue; // ### respect calendermodel
+                                // log.info("### NEW: OSM Relation ID: " + codeValue);
+                                // every item with a osm relation id gets a label and description UPDATE
+                                // updateOrCreateWikidataItem(itemId, label, null, description, label);
+                                createOSMRelationID(codeValue.toString(), itemId, s.getStatementId());
+                            }
+                        }
+                    }
+
+                // Starting to qualify claims..
+
+                } else if (isCountry) {
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            // --- Statement involving other ITEMS
+                            Association claimEdge = null;
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue itemIdValue = (EntityIdValue) mainSnakValue;
+                                if (itemIdValue.getEntityType().equals(EntityIdValue.ET_ITEM)) {
+                                    String referencedItemId = itemIdValue.getId();
+                                    updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);  // ### add this item // upward relation
+                                    claimEdge = createWikidataClaimEdge(referencedItemId, itemId, s.getStatementId(), sg.getProperty());
+                                }
+                            }
+                            if (claimEdge != null) storeQualifyingTimeProperties(claimEdge, s);
+                        }
+                    }
+
+                } else if (isCapital) {
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            // value
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            // --- Statement involving other ITEMS
+                            Association claimEdge = null;
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue itemIdValue = (EntityIdValue) mainSnakValue;
+                                if (itemIdValue.getEntityType().equals(EntityIdValue.ET_ITEM)) {
+                                    String referencedItemId = itemIdValue.getId();
+                                    claimEdge = createWikidataClaimEdge(itemId, referencedItemId, s.getStatementId(), sg.getProperty());
+                                }
+                            }
+                            // qualifiers
+                            if (claimEdge != null) storeQualifyingTimeProperties(claimEdge, s);
+                        }
+                    }
+
+                } else if (locatedInAdministrativeEntity) { // institutions in cities or cities in regions and regions in countries
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            // --- Statement involving other ITEMS
+                            Association claimEdge = null;
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue itemIdValue = (EntityIdValue) mainSnakValue;
+                                if (itemIdValue.getEntityType().equals(EntityIdValue.ET_ITEM)) {
+                                    String referencedItemId = itemIdValue.getId();
+                                    log.fine("### NEW: item is located in Administrative unit: " + referencedItemId); // ### add this item // upward relation
+                                    updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
+                                    claimEdge = createWikidataClaimEdge(referencedItemId, itemId, s.getStatementId(), sg.getProperty());
+                                }
+                            }
+                            if (claimEdge != null) storeQualifyingTimeProperties(claimEdge, s);
+                        }
+                    }
+
+                } else if (containsAdministrativeEntity) { // regions in countries
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            // --- Statement involving other ITEMS
+                            Association claimEdge = null;
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue itemIdValue = (EntityIdValue) mainSnakValue;
+                                if (itemIdValue.getEntityType().equals(EntityIdValue.ET_ITEM)) {
+                                    String referencedItemId = itemIdValue.getId();
+                                    // ## need label
+                                    updateOrCreateWikidataItem(referencedItemId, null, null, null, this.isoLanguageCode);
+                                    claimEdge = createWikidataClaimEdge(itemId, referencedItemId, s.getStatementId(), sg.getProperty());
+                                }
+                            }
+                            if (claimEdge != null) storeQualifyingTimeProperties(claimEdge, s);
+                        }
+                    }
+
+                } else if (isCitizenOf) { // persons in countries
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            // --- Statement involving other ITEMS
+                            Association claimEdge = null;
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue itemIdValue = (EntityIdValue) mainSnakValue;
+                                if (itemIdValue.getEntityType().equals(EntityIdValue.ET_ITEM)) {
+                                    String referencedItemId = itemIdValue.getId();
+                                    log.fine("### NEW: person/human is citizen of : " + referencedItemId);
+                                    // ### updateOrCreateWikidataItem(itemId, label, label, description, label);
+                                    claimEdge = createWikidataClaimEdge(itemId, referencedItemId, s.getStatementId(), sg.getProperty());
+                                }
+                            }
+                            if (claimEdge != null) storeQualifyingTimeProperties(claimEdge, s);
+                        }
+                    }
+
+                } else if (isResidenceOf) { // persons in cities
+                    for (Statement s : sg.getStatements()) {
+                        if (s.getClaim().getMainSnak() instanceof ValueSnak) {
+                            Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
+                            // --- Statement involving other ITEMS
+                            Association claimEdge = null;
+                            if (mainSnakValue instanceof EntityIdValue) {
+                                EntityIdValue itemIdValue = (EntityIdValue) mainSnakValue;
+                                if (itemIdValue.getEntityType().equals(EntityIdValue.ET_ITEM)) {
+                                    String referencedItemId = itemIdValue.getId();
+                                    log.fine("### NEW: person/human has residence in : " + referencedItemId);
+                                    claimEdge = createWikidataClaimEdge(itemId, referencedItemId, s.getStatementId(), sg.getProperty());
+                                }
+                            }
+                            if (claimEdge != null) storeQualifyingTimeProperties(claimEdge, s);
+                        }
+                    }
+
+                // #### IS_PLACE_OF_BIRTH // person at city
+                // #### IS_PLACE_OF_DEATH // person at city
+
+                /** } else if (isBirthDateOf || isDeathDateOf) {
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
@@ -256,11 +421,12 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                                 log.fine("### NEW: Parsed name is item with ID : " + nameId);
                             }
                         }
-                    }
+                    } **/
                 
                 // 1.2) Record various relations of current item to other items
 
                 } else if (isEmployeeOf) {
+                    // #### wasEducatedAt // person at institution
                     // some professional person to organisation relationship
                     /*** for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
@@ -293,10 +459,77 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         }
     }
     
+    private void storeQualifyingTimeProperties(Association claim, Statement s) {
+        // 0) fetch claim edge via uri (yet not possible with dm4-core)
+        /** String statementGUID = s.getStatementId();
+        log.info("Try to fetch assoc by statementUID " + statementGUID + " .... " );
+        Topic actuallyAssoc = dms.getTopic("uri", new Simp  leValue(statementGUID)); */
+        // 1) store properties to claim edge
+        List<SnakGroup> qualifierGroups = s.getClaim().getQualifiers();
+        if (qualifierGroups.size() > 0) log.info("> Claim to qualify is " + claim.getUri() + " id: " + claim.getId());
+        for (SnakGroup statement : qualifierGroups) {
+            if (statement.getProperty().getId().contains(WikidataEntityMap.STARTED_AT)) {
+                for (Snak snak : statement.getSnaks()) {
+                    DeepaMehtaTransaction tx = dms.beginTx();
+                    try {
+                        Value snakValue = ((ValueSnak) snak).getValue(); // JacksonNoValueSnack or NoValueSnack will throw an exception
+                        if (snakValue instanceof TimeValue || snakValue instanceof JacksonValueTime) {
+                                TimeValue value = (TimeValue) snakValue;
+                                Calendar calendar = new GregorianCalendar();
+                                int year = (int) value.getYear();
+                                int month = value.getMonth();
+                                calendar.set(year, month, value.getDay(), value.getHour(), value.getMinute(), value.getSecond());
+                                Date date = calendar.getTime();
+                                if (date != null) {
+                                    log.info(">> Statement ("+statement.getProperty().getId()+") has a qualified START_DATE: " + date.getTime() + " (Year: " + value.getYear() + ")");
+                                    claim.setProperty("org.deepamehta.start_time", date.getTime(), true);
+                                    tx.success();
+                                }
+                        }
+                    } catch (Exception e) {
+                        log.log(Level.WARNING, "Could not parse and convert TimeValue into a Date, due to a ", e);
+                        tx.failure();
+                    } finally {
+                        tx.finish();
+                    }
+                }
+            } else if (statement.getProperty().getId().contains(WikidataEntityMap.ENDED_AT)) {
+                for (Snak snak : statement.getSnaks()) {
+                    DeepaMehtaTransaction tx = dms.beginTx();
+                    try {
+                        Value snakValue = ((ValueSnak) snak).getValue(); // JacksonNoValueSnack or NoValueSnack will throw an exception
+                        if (snakValue instanceof TimeValue || snakValue instanceof JacksonValueTime) {
+                            TimeValue value = (TimeValue) snakValue;
+                            Calendar calendar = new GregorianCalendar();
+                            int year = (int) value.getYear();
+                            int month = value.getMonth();
+                            calendar.set(year, month, value.getDay(), value.getHour(), value.getMinute(), value.getSecond());
+                            Date date = calendar.getTime();
+                            if (date != null) {
+                                log.info(">> Statement ("+statement.getProperty().getId()+") has a qualified END_DATE: " + date.getTime() + " (Year: " + value.getYear() + ")");
+                                claim.setProperty("org.deepamehta.end_time", date.getTime(), true);
+                                tx.success();
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.log(Level.WARNING, "Could not parse and convert TimeValue into a Date, due to a ", e);
+                        tx.failure();
+                    } finally {
+                        tx.finish();
+                    }
+                }
+            }
+        }
+    }
+    
     private Topic getWikidataItemByEntityId (EntityIdValue id) {
         return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id.getId()));
     }
-
+   
+    private Topic getWikidataItemByPropertyId (String propertyId) {
+        return dms.getTopic("uri", new SimpleValue(propertyId));
+    }
+    
     private Topic getWikidataItemByEntityId (String id) {
         return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id));
     }
@@ -401,73 +634,69 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
             } finally {
                 tx.finish();
             }   
-        } else if (item != null) {
-            log.info(" UPDATING wikidata item which already exists ... ");
-            DeepaMehtaTransaction tx = dms.beginTx();
-            try {
-                // ### if values for language code already exist, updates those otherwise
-                // create and append values in new language code..
-                ChildTopicsModel languagedValueModel = new ChildTopicsModel();
-                // 
-                if (languageCode != null) {
-                    languagedValueModel.putRef("org.deepamehta.wikidata.language_code", languageCode.getId());
-                } else {
-                    languagedValueModel.put("org.deepamehta.wikidata.language_code", language_code);   
-                }
-                // ### experimental..
-                // item.loadChildTopics();
-                if (item.getChildTopics().getModel().has("org.deepamehta.wikidata.entity_value")) {
-                    List<TopicModel> existingValues = item.getModel().getChildTopicsModel().getTopics("org.deepamehta.wikidata.entity_value");
-                    boolean existing = false;
-                    for (TopicModel el : existingValues) {
-                        String existingLanguageValueCode = el.getChildTopicsModel().getString("org.deepamehta.wikidata.language_code");
-                        if (existingLanguageValueCode.equals(language_code)) {
-                            existing = true;
-                            log.info("Updating existing values for language " + language_code + " and item " + itemId);
-                            if (name != null) {
-                                el.getChildTopicsModel().put("org.deepamehta.wikidata.label_value", name);
-                            }
-                            if (alias != null) {
-                                el.getChildTopicsModel().put("org.deepamehta.wikidata.alias_value", alias);
-                            }
-                            if (description != null) {
-                                el.getChildTopicsModel().put("org.deepamehta.wikidata.description_value", description);
-                            }
-                            if (name != null || alias != null || description != null) {
-                                TopicModel existingItem = item.getModel();
-                                existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
-                                        new TopicModel("org.deepamehta.wikidata.entity_value", el.getChildTopicsModel()));
-                                dms.updateTopic(existingItem);
-                                tx.success();
-                                break;
-                            }
-                        }
-                    }
-                    if (!existing) {
-                        log.info("Creating and appending values for language " + language_code + " and item " + itemId);
+        } else {
+            // ### if values for language code already exist, updates those otherwise
+            // create and append values in new language code..
+            ChildTopicsModel languagedValueModel = new ChildTopicsModel();
+            // 
+            if (languageCode != null) {
+                languagedValueModel.putRef("org.deepamehta.wikidata.language_code", languageCode.getId());
+            } else {
+                languagedValueModel.put("org.deepamehta.wikidata.language_code", language_code);   
+            }
+            // ### experimental..
+            // item.loadChildTopics();
+            if (item.getChildTopics().getModel().has("org.deepamehta.wikidata.entity_value")) {
+                List<TopicModel> existingValues = item.getModel().getChildTopicsModel().getTopics("org.deepamehta.wikidata.entity_value");
+                boolean existing = false;
+                for (TopicModel el : existingValues) {
+                    String existingLanguageValueCode = el.getChildTopicsModel().getString("org.deepamehta.wikidata.language_code");
+                    if (existingLanguageValueCode.equals(language_code)) {
+                        existing = true;
+                        // ## skip updating values during development
+                        /** DeepaMehtaTransaction tx = dms.beginTx();
+                        // log.info("Updating existing values for language " + language_code + " and item " + itemId);
                         if (name != null) {
-                            languagedValueModel.put("org.deepamehta.wikidata.label_value", name);
+                            el.getChildTopicsModel().put("org.deepamehta.wikidata.label_value", name);
                         }
                         if (alias != null) {
-                            languagedValueModel.put("org.deepamehta.wikidata.alias_value", alias);
+                            el.getChildTopicsModel().put("org.deepamehta.wikidata.alias_value", alias);
                         }
                         if (description != null) {
-                            languagedValueModel.put("org.deepamehta.wikidata.description_value", description);
+                            el.getChildTopicsModel().put("org.deepamehta.wikidata.description_value", description);
                         }
                         if (name != null || alias != null || description != null) {
                             TopicModel existingItem = item.getModel();
                             existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
-                                    new TopicModel("org.deepamehta.wikidata.entity_value", languagedValueModel));
+                                    new TopicModel("org.deepamehta.wikidata.entity_value", el.getChildTopicsModel()));
                             dms.updateTopic(existingItem);
                             tx.success();
-                        }
-                    }   
+                            tx.finish();
+                            break;
+                        }**/
+                    }
                 }
-            } catch (Exception re) {
-                tx.failure();
-                log.log(Level.SEVERE, "ERROR: Could not create wikidata item topic", re);
-            } finally {
-                tx.finish();
+                if (!existing) {
+                    DeepaMehtaTransaction tx = dms.beginTx();
+                    // log.info("Creating and appending values for language " + language_code + " and item " + itemId);
+                    if (name != null) {
+                        languagedValueModel.put("org.deepamehta.wikidata.label_value", name);
+                    }
+                    if (alias != null) {
+                        languagedValueModel.put("org.deepamehta.wikidata.alias_value", alias);
+                    }
+                    if (description != null) {
+                        languagedValueModel.put("org.deepamehta.wikidata.description_value", description);
+                    }
+                    if (name != null || alias != null || description != null) {
+                        TopicModel existingItem = item.getModel();
+                        existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
+                                new TopicModel("org.deepamehta.wikidata.entity_value", languagedValueModel));
+                        dms.updateTopic(existingItem);
+                        tx.success();
+                        tx.finish();
+                    }
+                }
             }
         }
     }
@@ -475,61 +704,94 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     private void attachGeoCoordinates(double[] coordinates, String itemId) {
         Topic item = getWikidataItemByEntityId(itemId);
         if (item != null) { // Item is already in DB
-            DeepaMehtaTransaction tx = dms.beginTx();
-            try {
                 // ### fixme does not work, may be there is an error in the storage layer impl
                 //     (during comparison of double values after wrapping them in SimpleValues?)
-                Topic coordinatesTopic = getGeoCoordinateTopicByValue(coordinates);
-                if (coordinatesTopic != null) { // geo coordinates for this item are already in DB (currently never)
-                    log.info(" > Adding ASSIGNMENT existing Geo Coordinates to item " + itemId + " to " + coordinates);
-                    TopicModel updatedItem = item.getModel();
+                // Topic coordinatesTopic = getGeoCoordinateTopicByValue(coordinates);
+                // if (coordinatesTopic != null) { // geo coordinates for this item are already in DB (currently never)
+                    // ### if so, lets leave them and not add otherones during development
+                    // log.info(" > Adding ASSIGNMENT existing Geo Coordinates to item " + itemId + " to " + coordinates);
+                    /** TopicModel updatedItem = item.getModel();
                     updatedItem.getChildTopicsModel().addRef("dm4.geomaps.geo_coordinate", coordinatesTopic.getId());
-                    dms.updateTopic(updatedItem);
-                    tx.success();
-                } else {
-                    log.info(" > Creating NEW Geo Coordinates for item " + itemId + " at " + coordinates);
-                    ChildTopicsModel geoCoordinates = new ChildTopicsModel();
-                    geoCoordinates.put("dm4.geomaps.latitude", coordinates[1]);
-                    geoCoordinates.put("dm4.geomaps.longitude", coordinates[0]);
-                    TopicModel geoCoordinatesModel = new TopicModel("dm4.geomaps.geo_coordinate", geoCoordinates);
-                    TopicModel updatedItem = item.getModel();
-                    updatedItem.getChildTopicsModel().add("dm4.geomaps.geo_coordinate", geoCoordinatesModel);
-                    dms.updateTopic(updatedItem);
-                    tx.success();
+                    dms.updateTopic(updatedItem); **/
+                    // tx.success();
+                // } else {
+                if (!item.getChildTopics().has("dm4.geomaps.geo_coordinate")) { // during dev we stick to one coordinate per item
+                    DeepaMehtaTransaction tx = dms.beginTx();
+                    try {
+                        // log.info(" > Creating NEW Geo Coordinates for item " + itemId + " at " + coordinates);
+                        ChildTopicsModel geoCoordinates = new ChildTopicsModel();
+                        /** Topic el = getLatitudeTopicByValue(coordinates[1]);
+                        if (el != null) {
+                            geoCoordinates.putRef("dm4.geomaps.latitude", el.getId());
+                        } else { **/
+                            geoCoordinates.put("dm4.geomaps.latitude", coordinates[1]);
+                        /** }
+                        Topic elng = getLongitudeTopicByValue(coordinates[0]);
+                        if (el != null) {
+                            geoCoordinates.putRef("dm4.geomaps.longitude", elng.getId());
+                        } else { **/
+                            geoCoordinates.put("dm4.geomaps.longitude", coordinates[0]);
+                        // }
+                        TopicModel geoCoordinatesModel = new TopicModel("dm4.geomaps.geo_coordinate", geoCoordinates);
+                        TopicModel updatedItem = item.getModel();
+                        updatedItem.getChildTopicsModel().put("dm4.geomaps.geo_coordinate", geoCoordinatesModel);
+                        dms.updateTopic(updatedItem);
+                        tx.success();
+                    } catch (Exception error) {
+                        log.log(Level.SEVERE, "could not attach coordinates to item " + itemId, error);
+                        tx.failure();
+                    } finally {
+                        tx.finish();
+                    }
                 }
-            } catch (Exception error) {
-                log.log(Level.SEVERE, "could not attach coordinates to item " + itemId, error);
-                tx.failure();
-            } finally {
-                tx.finish();
-            }
         } else { // no wikidata item found
             log.warning("No wikidata item " + itemId + " found for assigning geo-coordinates");
         }
     }
         
     private Topic getGeoCoordinateTopicByValue(double[] coordinates) {
-        Topic latitudeExist = dms.getTopic("dm4.geomaps.latitude", new SimpleValue(coordinates[1]));
-        Topic longitudeExist = dms.getTopic("dm4.geomaps.longitude", new SimpleValue(coordinates[0]));
-        if (latitudeExist != null && longitudeExist != null) {
-            log.info(" > Latitude & Longitude values already exist in DB ... ");
-            RelatedTopic latitudeParent = latitudeExist.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
+        Topic latitudeTopic = dms.getTopic("dm4.geomaps.latitude", new SimpleValue(coordinates[1]));
+        Topic longitudeTopic = dms.getTopic("dm4.geomaps.longitude", new SimpleValue(coordinates[0]));
+        if (latitudeTopic != null && longitudeTopic != null) {
+            RelatedTopic latitudeParent = latitudeTopic.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
                 "dm4.core.parent", "dm4.geomaps.geo_coordinate");
-            RelatedTopic longitudeParent = longitudeExist.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
+            RelatedTopic longitudeParent = longitudeTopic.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
                 "dm4.core.parent", "dm4.geomaps.geo_coordinate");
             if (latitudeParent.getId() == longitudeParent.getId()) {
+                // if both values share the same parent, return the geo-coordinate topic value
                 return latitudeParent;
             }
         }
-        log.info(" > Latitude & Longitude values DO NOT currently exist in DB ... " + coordinates[1] + ", " + coordinates[0]);
         return null;
     }
+    
+    /** ### see Ticket 804 private Topic getLatitudeTopicByValue(double value) {
+        return dms.getTopic("dm4.geomaps.latitude", new SimpleValue(value));
+    }
+    
+    private Topic getLongitudeTopicByValue(double value) {
+        return dms.getTopic("dm4.geomaps.longitude", new SimpleValue(value));
+    } **/
     
     private Topic getLanguageIsoCodeTopicByValue(String iso_code) {
         return dms.getTopic("org.deepamehta.wikidata.language_code", new SimpleValue(iso_code));
     }
     
-    private void createRelatedURLTopic(Topic topic, String url) {
+    private Topic getWikidataTextTopic(String text_value) {
+        if (text_value.contains("\"")) text_value = text_value.replaceAll("\"", "");
+        return dms.getTopic("org.deepamehta.wikidata.text", new SimpleValue(text_value));
+    }
+    
+    private Topic createWikidataTextTopic(String text_value) {
+        DeepaMehtaTransaction tx = dms.beginTx();
+        if (text_value.contains("\"")) text_value = text_value.replaceAll("\"", "");
+        Topic countryCode = dms.createTopic(new TopicModel("org.deepamehta.wikidata.text", new SimpleValue(text_value)));
+        tx.success();
+        tx.finish();
+        return countryCode;
+    }
+    
+    /** private void createRelatedURLTopic(Topic topic, String url) {
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             TopicModel urlmodel = new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(url));
@@ -547,60 +809,207 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         } finally {
             tx.finish();
         }
-    }
-
-    private void createItemRelations (HashMap<String, HashMap<String, String>> relations, String relationName, String relationType) {
-        log.info(" ... " + relations.size() + " " +relationName+ " associations");
-        // Key: Wikidata Entity/Item ID, Value: Set<TopicId, StatementUID>
-        for (String itemId : relations.keySet()) {
-            HashMap<String, String> referenceMap = relations.get(itemId);
-            Association relation = null;
-            Topic toPlayer = null, fromPlayer = null;
-            // Key: Topic ID, Value: Statemend-UID
-            for (String relatedEntityId : referenceMap.keySet()) {
-                String statementValueCode = referenceMap.get(relatedEntityId);
-                String statementGUID = statementValueCode.split(WikidataEntityMap.URI_SEPERATOR)[0];
-                String propertyEntityId = statementValueCode.split(WikidataEntityMap.URI_SEPERATOR)[1];
-                if (relatedEntityId.startsWith("T")) {
-                    toPlayer = dms.getTopic(Long.parseLong(relatedEntityId.substring(1)));
-                    fromPlayer = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
-                }
-                if (fromPlayer != null && toPlayer != null &&
-                    !associationAlreadyExists(fromPlayer.getId(), toPlayer.getId(), relationType)) {
-                    Topic propertyEntity = getWikidataItemByEntityId(propertyEntityId);
-                    ChildTopicsModel assocModel = null;
-                    if (propertyEntity == null) { // do create new property entity topic
-                        assocModel = new ChildTopicsModel()
-                            .add("org.deepamehta.wikidata.property", new TopicModel(
-                                    WikidataEntityMap.WD_ENTITY_BASE_URI + propertyEntityId,
-                                    "org.deepamehta.wikidata.property"));
-                    } else {
-                        assocModel = new ChildTopicsModel()
-                            .addRef("org.deepamehta.wikidata.property", propertyEntity.getId());
-                    }
-                    DeepaMehtaTransaction tx = dms.beginTx();
-                    try {
-                        relation = dms.createAssociation(new AssociationModel(relationType,
-                                new TopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
-                                new TopicRoleModel(toPlayer.getId(), "dm4.core.child"), assocModel));
-                        relation.setUri(statementGUID);
-                        if (relation != null) {
-                            log.info("Created new \""+relationType+"\" relationship for " + itemId +
-                                    " to " + toPlayer.getId() + " (" + toPlayer.getSimpleValue() + ") with GUID: \""
-                                    + relation.getUri() + "\" and propertyEntityID: \"" + propertyEntityId +"\"");
-                            workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
-                        }
-                        // ### relation.setSimpleValue(relationName);
-                        tx.success();
-                    } catch (Exception e) {
-                        log.log(Level.SEVERE, e.getMessage(), e);
-                        tx.failure();
-                    } finally {
-                        tx.finish();
-                    }
-                }
-            }
+    } */
+    
+    private void createCountryCodeRelation (String isoThreeLetterCode, String forItemId, String statementGUID) {
+        Association relation = null;
+        Topic fromPlayer = getWikidataItemByEntityId(forItemId);
+        String relationType = "org.deepamehta.wikidata.iso_country_code";
+        if (fromPlayer == null) {
+            log.warning("Could not find Wikidata Item topic to related country code too! - creating minimal wikidata item");
+            fromPlayer = createMinimalWikidataItem(forItemId);
         }
+        // 
+        Topic countryCode = getWikidataTextTopic(isoThreeLetterCode);
+        if (countryCode == null) { // do create new country code topic
+            countryCode = createWikidataTextTopic(isoThreeLetterCode);
+        }
+        if (!hierarchicalAssociationAlreadyExists(fromPlayer.getId(), countryCode.getId(), relationType)) {
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                relation = dms.createAssociation(new AssociationModel(relationType,
+                        new TopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
+                        new TopicRoleModel(countryCode.getId(), "dm4.core.child")));
+                relation.setUri(statementGUID);
+                if (relation != null) {
+                    log.fine("Created new \""+relationType+"\" relationship for " + fromPlayer.getUri()+
+                            " to " + countryCode.getSimpleValue() + ") with as ISO Country Code - GUID: \""
+                            + relation.getUri() + "\"");
+                    workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
+                }
+                // relation.setSimpleValue(relationName);
+                tx.success();
+            } catch (Exception e) {
+                log.log(Level.SEVERE, e.getMessage(), e);
+                tx.failure();
+                throw new RuntimeException(e);
+            } finally {
+                tx.finish();
+            }
+        } else {
+            // country code relation arleady exists
+        }
+    }
+    
+    private void createNUTSCodeRelation (String nutsCode, String forItemId, String statementGUID) {
+        Association relation = null;
+        Topic fromPlayer = getWikidataItemByEntityId(forItemId);
+        String relationType = "org.deepamehta.wikidata.nuts_code";
+        if (fromPlayer == null) {
+            log.warning("Could not find Wikidata Item topic to related nuts code! - creating minimal wikidata item");
+            fromPlayer = createMinimalWikidataItem(forItemId);
+        }
+        // 
+        Topic countryCode = getWikidataTextTopic(nutsCode);
+        if (countryCode == null) { // do create new country code topic
+            countryCode = createWikidataTextTopic(nutsCode);
+        }
+        if (!hierarchicalAssociationAlreadyExists(fromPlayer.getId(), countryCode.getId(), relationType)) {
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                relation = dms.createAssociation(new AssociationModel(relationType,
+                        new TopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
+                        new TopicRoleModel(countryCode.getId(), "dm4.core.child")));
+                relation.setUri(statementGUID);
+                if (relation != null) {
+                    log.fine("Created new \""+relationType+"\" relationship for " + fromPlayer.getUri()+
+                            " to " + countryCode.getSimpleValue() + " as NUTS Code - GUID: \""
+                            + relation.getUri() + "\"");
+                    workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
+                }
+                // relation.setSimpleValue(relationName);
+                tx.success();
+            } catch (Exception e) {
+                log.log(Level.SEVERE, e.getMessage(), e);
+                tx.failure();
+                throw new RuntimeException(e);
+            } finally {
+                tx.finish();
+            }
+        } else {
+            // country code relation arleady exists
+        }
+    }
+    
+    private void createOSMRelationID (String osmRelationId, String forItemId, String statementGUID) {
+        Association relation = null;
+        Topic fromPlayer = getWikidataItemByEntityId(forItemId);
+        String relationType = "org.deepamehta.wikidata.osm_relation_id";
+        if (fromPlayer == null) {
+            log.warning("Could not find Wikidata Item topic to related country code too! - creating minimal wikidata item");
+            fromPlayer = createMinimalWikidataItem(forItemId);
+        }
+        // 
+        Topic countryCode = getWikidataTextTopic(osmRelationId);
+        if (countryCode == null) { // do create new country code topic
+            countryCode = createWikidataTextTopic(osmRelationId);
+        }
+        if (!hierarchicalAssociationAlreadyExists(fromPlayer.getId(), countryCode.getId(), relationType)) {
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                relation = dms.createAssociation(new AssociationModel(relationType,
+                        new TopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
+                        new TopicRoleModel(countryCode.getId(), "dm4.core.child")));
+                relation.setUri(statementGUID);
+                if (relation != null) {
+                    log.fine("Created new \""+relationType+"\" relationship for " + fromPlayer.getUri()+
+                            " to " + countryCode.getSimpleValue()+ " as OSM Relation ID - GUID: \""
+                            + relation.getUri() + "\"");
+                    workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
+                }
+                // relation.setSimpleValue(relationName);
+                tx.success();
+            } catch (Exception e) {
+                log.log(Level.SEVERE, e.getMessage(), e);
+                tx.failure();
+                throw new RuntimeException(e);
+            } finally {
+                tx.finish();
+            }
+        } else {
+            // country code relation arleady exists
+        }
+    }
+    
+    private Association createWikidataClaimEdge (String fromItemId, String toItemId, String statementGUID, PropertyIdValue propertyEntityId) {
+        Association relation = null;
+        Topic fromPlayer = getWikidataItemByEntityId(fromItemId);
+        String relationType = "org.deepamehta.wikidata.claim_edge";
+        if (fromPlayer == null) {
+            log.fine("Could not find Wikidata Item topic to related country code too! - creating minimal wikidata item");
+            fromPlayer = createMinimalWikidataItem(fromItemId);
+        }
+        // 
+        Topic wikidataItemTopic = getWikidataItemByEntityId(toItemId);
+        if (wikidataItemTopic == null) { // do create new country code topic
+            wikidataItemTopic = createMinimalWikidataItem(toItemId);
+        }
+        if (!associationAlreadyExists(fromPlayer.getId(), wikidataItemTopic.getId(), relationType)) {
+            Topic propertyEntityTopic = getWikidataItemByPropertyId(propertyEntityId.getIri());
+            ChildTopicsModel assocModel = null;
+            if (propertyEntityTopic == null) { // do create new property entity topic
+                assocModel = new ChildTopicsModel()
+                    .put("org.deepamehta.wikidata.property", new TopicModel(
+                            propertyEntityId.getIri(), "org.deepamehta.wikidata.property"));
+            } else {
+                assocModel = new ChildTopicsModel()
+                    .putRef("org.deepamehta.wikidata.property", propertyEntityTopic.getId());
+            }
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                relation = dms.createAssociation(new AssociationModel(relationType,
+                        new TopicRoleModel(fromPlayer.getId(), "dm4.core.default"),
+                        new TopicRoleModel(wikidataItemTopic.getId(), "dm4.core.default"), assocModel));
+                relation.setUri(statementGUID);
+                if (relation != null) {
+                    log.fine("Created new \""+relationType+"\" relationship for " + fromPlayer.getUri()+
+                            " to " + wikidataItemTopic.getUri()+ " (" + wikidataItemTopic.getSimpleValue() + ") with Prop: "+propertyEntityId+" GUID: \""
+                            + relation.getUri() + "\"");
+                    workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
+                }
+                // relation.setSimpleValue(relationName);
+                tx.success();
+            } catch (Exception e) {
+                log.log(Level.SEVERE, e.getMessage(), e);
+                tx.failure();
+                throw new RuntimeException(e);
+            } finally {
+                tx.finish();
+            }
+        } else {
+            // country code relation arleady exists
+        }
+        return relation;
+    }
+    
+    private Topic createMinimalWikidataItem(String itemId) {
+        Topic item = getWikidataItemByEntityId(itemId);
+        if (item == null) {
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                TopicModel wikidataItemTopicModel = null;
+                wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
+                    "org.deepamehta.wikidata.item");
+                item = dms.createTopic(wikidataItemTopicModel);
+                if (item != null) {
+                    // OK
+                    workspaceService.assignToWorkspace(item, wikidataWorkspace.getId());
+                    // log.info("CREATED minimal Wikidata Topic for item " + itemId + ":" + item.getSimpleValue());
+                } else {
+                    log.warning(" Could not create minimal Wikidata Topic for item " + itemId);
+                }
+                tx.success();
+            } catch (Exception re) {
+                tx.failure();
+                log.log(Level.SEVERE, "ERROR: Could not create wikidata item topic", re);
+                throw new RuntimeException(re);
+            } finally {
+                tx.finish();
+            }   
+        } else {
+            log.warning(" Did not create minimal Wikidata Topic for item " + itemId + " wikidata Item already exists .. " + item.getSimpleValue());   
+        }
+        return item;
     }
     
     private boolean alreadyExists (String wikidataItemId) {
@@ -612,6 +1021,12 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
 
     private boolean associationAlreadyExists (long playerOne, long playerTwo, String assocTypeUri) {
         Association assoc = dms.getAssociation(assocTypeUri, playerOne, playerTwo, "dm4.core.default", "dm4.core.default");
+        if (assoc == null) return false;
+        return true;
+    }
+    
+    private boolean hierarchicalAssociationAlreadyExists (long parentId, long childId, String assocTypeUri) {
+        Association assoc = dms.getAssociation(assocTypeUri, parentId, childId, "dm4.core.parent", "dm4.core.child");
         if (assoc == null) return false;
         return true;
     }

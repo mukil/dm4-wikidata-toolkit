@@ -212,7 +212,7 @@
            "uri" : "org.deepamehta.wikidata.importer_default_config",
            "childs": {
                "org.deepamehta.wikidata.dumpfile_language_iso"  : "en",
-               "org.deepamehta.wikidata.dumpfile_sec_parse"     : "2",
+               "org.deepamehta.wikidata.dumpfile_sec_parse"     : "600",
                "org.deepamehta.wikidata.dumpfile_download"      : false,
                "org.deepamehta.wikidata.dumpfile_descriptions"  : true,
                "org.deepamehta.wikidata.dumpfile_websites"      : false,

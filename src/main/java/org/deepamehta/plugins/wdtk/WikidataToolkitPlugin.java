@@ -23,7 +23,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
-import org.wikidata.wdtk.datamodel.interfaces.EntityDocumentProcessor;
+import org.deepamehta.plugins.wdtk.viewmodel.CountryItem;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
 
@@ -87,6 +87,20 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         Topic settings = dms.getTopic(settingsTopicId);
         importWikidataEntities(settings);
         return settings;
+    }
+    
+    @GET
+    @Path("/list/countries")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<CountryItem> getAllCountryItems() {
+        //
+        ArrayList<CountryItem> results = new ArrayList();
+        ResultList<RelatedTopic> all = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        for (RelatedTopic isoCode : all) {
+            CountryItem item = new CountryItem(isoCode);
+            if (item.isCountry()) results.add(item);
+        }
+        return results;
     }
     
     @GET
@@ -320,7 +334,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean geoCoordinates = childs.getBoolean(WD_IMPORT_COORDINATES);
         WikidataGeodataProcessor wikidataEntityProcessor = new WikidataGeodataProcessor(dms, wsService, timeOut, 
                 persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode);
-        WikidataToolkitPlugin.this.startProcesssingWikidataDumpfile(wikidataEntityProcessor, noDownload);
+        WikidataToolkitPlugin.this.startProcessingWikidataDumpfile(wikidataEntityProcessor, noDownload);
         wikidataEntityProcessor = null;
     }
     
@@ -333,7 +347,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
      * @param   noDownload     if set to true only dumpfiles already stored on disk are considered for import
      * in this dump
      */
-    private void startProcesssingWikidataDumpfile(WikidataGeodataProcessor entityProcessor, boolean noDownload) {
+    private void startProcessingWikidataDumpfile(WikidataGeodataProcessor entityProcessor, boolean noDownload) {
         if (isCurrentlyImporting == true) {
             log.warning("One WDTK DumpFileProcessor is already running, please try again later.");
             return;
@@ -360,7 +374,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
             dumpProcessingController.processMostRecentJsonDump();
         } catch (Exception e) {
             isCurrentlyImporting = false;
-            log.warning("Exception of type " + e.getClass() + " caught silent!");
+            log.log(Level.SEVERE, "Let's see, if this is not a TimeoutException, what was catched then?", e);
             // The timer caused a time out or we could not find a dumpfile.
         }
         entityProcessor.stop();
