@@ -1,10 +1,10 @@
 package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.Association;
-import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
 import de.deepamehta.core.model.ChildTopicsModel;
+import de.deepamehta.core.model.RelatedTopicModel;
 import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
@@ -91,8 +91,11 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     WorkspacesService workspaceService;
     Topic wikidataWorkspace = null;
 
+    DeepaMehtaTransaction tx = null;
+    Date importStartedAt = null;
+
     public WikidataGeodataProcessor (DeepaMehtaService dms, WorkspacesService workspaceService, int timeout,
-        boolean persons, boolean institutions, boolean cities, boolean countries, boolean descriptions, 
+        boolean persons, boolean institutions, boolean cities, boolean countries, boolean descriptions,
         boolean urls, boolean coordinates, String iso_lang) {
         this.timeout = timeout;
         this.dms = dms;
@@ -108,13 +111,21 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         wikidataWorkspace = workspaceService.getWorkspace(WS_WIKIDATA_URI);
         log.info("Set up to import wikidata topics into workspace \"" + wikidataWorkspace.getSimpleValue()
                 + "\" with language Code " + this.isoLanguageCode );
+        importStartedAt = new Date();
     }
 
     @Override
     public void processItemDocument(ItemDocument itemDocument) {
 
         countEntity();
-        
+
+        // Finish and create a new transaction for every 1000 items
+        if (tx == null) tx = dms.beginTx();
+        if (this.entityCount % 1000 == 0) {
+            tx.success();
+            tx.finish();
+            tx = dms.beginTx();
+        }
         // 0) Get label and description of current item
         String itemId = itemDocument.getEntityId().getId();
         String label = getItemLabel(itemDocument);
@@ -156,8 +167,8 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 boolean isBirthDateOf = sg.getProperty().getId().equals(WikidataEntityMap.WAS_BORN_ON);
                 boolean isDeathDateOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_DEAD_SINCE); **/
                 //
-                boolean isEmployeeOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_EMPLOYEE_OF);
-                /** boolean isPartyMemberOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_PARTY_MEMBER_OF);
+                /** boolean isEmployeeOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_EMPLOYEE_OF);
+                boolean isPartyMemberOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_PARTY_MEMBER_OF);
                 boolean isOfficiallyResidingAt = sg.getProperty().getId().equals(WikidataEntityMap.IS_OFFICIALLY_RESIDING_AT);
                 boolean isMemberOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_MEMBER_OF);
                 // boolean isAlmaMaterOf = sg.getProperty().getId().equals(WikidataEntityMap.IS_ALMA_MATER_OF);
@@ -229,7 +240,6 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
 
                                 }
                             }
-
                         }
                     }
 
@@ -264,6 +274,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
                             if (mainSnakValue instanceof StringValue) {
                                 StringValue codeValue = (StringValue) mainSnakValue;
+                                updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
                                 createWikidataTextClaim(codeValue.toString(), ASSOCTYPE_ISO_COUNTRY_CODE, itemId, s.getStatementId());
                             }
                         }
@@ -289,7 +300,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                                 StringValue codeValue = (StringValue) mainSnakValue;
                                 // log.info("### NEW: OSM Relation ID: " + codeValue);
                                 // every item with a osm relation id gets a label and description UPDATE
-                                // updateOrCreateWikidataItem(itemId, label, null, description, label);
+                                updateOrCreateWikidataItem(itemId, label, null, description, this.isoLanguageCode);
                                 createWikidataTextClaim(codeValue.toString(), ASSOCTYPE_OSM_RELATION_ID, itemId, s.getStatementId());
                             }
                         }
@@ -376,7 +387,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                         }
                     }
 
-                } else if (isCitizenOf) { // persons in countries
+                } /** else if (isCitizenOf) { // persons in countries
                     for (Statement s : sg.getStatements()) {
                         if (s.getClaim().getMainSnak() instanceof ValueSnak) {
                             Value mainSnakValue = ((ValueSnak) s.getClaim().getMainSnak()).getValue();
@@ -441,7 +452,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 
                 // 1.2) Record various relations of current item to other items
 
-                } else if (isEmployeeOf) {
+                /** } else if (isEmployeeOf) {
                     // #### wasEducatedAt // person at institution
                     // some professional person to organisation relationship
                     /*** for (Statement s : sg.getStatements()) {
@@ -463,8 +474,8 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                                 }
                             }
                         }
-                    } **/
-                }
+                    }
+                } **/
 
             }
         }
@@ -534,7 +545,6 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     private Topic createMinimalWikidataItem(String itemId) {
         // Topic item = getWikidataItemByEntityId(itemId); // should be just called if no item exists
         Topic item = null;
-        DeepaMehtaTransaction tx = dms.beginTx();
         try {
             TopicModel wikidataItemTopicModel = null;
             wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
@@ -544,132 +554,129 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 // OK
                 workspaceService.assignToWorkspace(item, wikidataWorkspace.getId());
                 // log.info("CREATED minimal Wikidata Topic for item " + itemId + ":" + item.getSimpleValue());
-                tx.success();
             }
         } catch (Exception re) {
-            tx.failure();
             log.log(Level.SEVERE, "ERROR: Could not create wikidata item topic", re);
-        } finally {
-            tx.finish();
         }
         return item;
     }
-  
+
     private void updateOrCreateWikidataItem(String itemId, String name, String alias, String description, String language) {
         // check precondition
         if (language == null) {
             log.warning("Invalid Argument - values can just be stored with an accompanying iso language code!");
             throw new WebApplicationException(500);
         }
-        String language_code = language.trim().toLowerCase();
-        Topic languageCode = getLanguageIsoCodeTopicByValue(language_code);
-        //        
+        String languageCodeValue = language.trim().toLowerCase();
+        Topic languageCode = getLanguageIsoCodeTopicByValue(languageCodeValue);
         Topic item = getWikidataItemByEntityId(itemId);
         if (item == null) {
-            DeepaMehtaTransaction tx = dms.beginTx();
-            try {
-                TopicModel wikidataItemTopicModel = null;
-                ChildTopicsModel wikidataEntityModel = new ChildTopicsModel();
-                ChildTopicsModel languagedValueModel = new ChildTopicsModel();
-                if (languageCode != null) {
-                    languagedValueModel.putRef("org.deepamehta.wikidata.language_code", languageCode.getId());
-                } else {
-                    languagedValueModel.put("org.deepamehta.wikidata.language_code", language_code);   
-                }
-                if (name != null) {
-                    languagedValueModel.put("org.deepamehta.wikidata.label_value", name);
-                }
-                if (alias != null) {
-                    languagedValueModel.put("org.deepamehta.wikidata.alias_value", alias);
-                }
-                if (description != null) {
-                    languagedValueModel.put("org.deepamehta.wikidata.description_value", description);
-                }
-                if (name != null || alias != null || description != null) {
-                    wikidataEntityModel.add("org.deepamehta.wikidata.entity_value", 
-                            new TopicModel("org.deepamehta.wikidata.entity_value", languagedValueModel));
-                    wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
-                            "org.deepamehta.wikidata.item", wikidataEntityModel);
-                } else {
-                    wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
-                            "org.deepamehta.wikidata.item");
-                }
-                Topic wikidataTopic = dms.createTopic(wikidataItemTopicModel);
-                if (wikidataTopic != null) {
-                    // OK
-                    workspaceService.assignToWorkspace(wikidataTopic, wikidataWorkspace.getId());
-                } else {
-                    log.warning(" Could not create Wikidata Topic for item " + itemId);
-                }
-                tx.success();
-            } catch (Exception re) {
-                tx.failure();
-                log.log(Level.SEVERE, "ERROR: Could not create wikidata item topic", re);
-            } finally {
-                tx.finish();
-            }   
+            createWikidataItem(itemId, name, alias, description, languageCode);
         } else {
             // ### if values for language code already exist, updates those otherwise
             // create and append values in new language code..
             ChildTopicsModel languagedValueModel = new ChildTopicsModel();
-            // 
+            //
             if (languageCode != null) {
                 languagedValueModel.putRef("org.deepamehta.wikidata.language_code", languageCode.getId());
             } else {
-                languagedValueModel.put("org.deepamehta.wikidata.language_code", language_code);   
+                languagedValueModel.put("org.deepamehta.wikidata.language_code", languageCodeValue);
             }
-            // ### experimental..
-            // item.loadChildTopics();
-            if (item.getChildTopics().getModel().has("org.deepamehta.wikidata.entity_value")) {
-                List<TopicModel> existingValues = item.getModel().getChildTopicsModel().getTopics("org.deepamehta.wikidata.entity_value");
-                boolean existing = false;
-                for (TopicModel el : existingValues) {
-                    String existingLanguageValueCode = el.getChildTopicsModel().getString("org.deepamehta.wikidata.language_code");
-                    if (existingLanguageValueCode.equals(language_code)) {
-                        existing = true;
-                        // ## skip updating values during development
-                        /** DeepaMehtaTransaction tx = dms.beginTx();
-                        // log.info("Updating existing values for language " + language_code + " and item " + itemId);
-                        if (name != null) {
-                            el.getChildTopicsModel().put("org.deepamehta.wikidata.label_value", name);
-                        }
-                        if (alias != null) {
-                            el.getChildTopicsModel().put("org.deepamehta.wikidata.alias_value", alias);
-                        }
-                        if (description != null) {
-                            el.getChildTopicsModel().put("org.deepamehta.wikidata.description_value", description);
-                        }
-                        if (name != null || alias != null || description != null) {
-                            TopicModel existingItem = item.getModel();
-                            existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
-                                    new TopicModel("org.deepamehta.wikidata.entity_value", el.getChildTopicsModel()));
-                            dms.updateTopic(existingItem);
-                            tx.success();
-                            tx.finish();
-                            break;
-                        }**/
-                    }
+            // ### experimental.
+            updateWikidataItem(item, name, alias, description, languagedValueModel, languageCodeValue);
+        }
+    }
+
+
+    private void createWikidataItem(String itemId, String name, String alias, String description, Topic lang) {
+        try {
+            TopicModel wikidataItemTopicModel = null;
+            ChildTopicsModel wikidataEntityModel = new ChildTopicsModel();
+            ChildTopicsModel languagedValueModel = new ChildTopicsModel();
+            if (lang != null) {
+                languagedValueModel.putRef("org.deepamehta.wikidata.language_code", lang.getId());
+            } else {
+                languagedValueModel.put("org.deepamehta.wikidata.language_code", lang);
+            }
+            if (name != null) {
+                languagedValueModel.put("org.deepamehta.wikidata.label_value", name);
+            }
+            if (alias != null) {
+                languagedValueModel.put("org.deepamehta.wikidata.alias_value", alias);
+            }
+            if (description != null) {
+                languagedValueModel.put("org.deepamehta.wikidata.description_value", description);
+            }
+            if (name != null || alias != null || description != null) {
+                wikidataEntityModel.add("org.deepamehta.wikidata.entity_value",
+                        new TopicModel("org.deepamehta.wikidata.entity_value", languagedValueModel));
+                wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
+                        "org.deepamehta.wikidata.item", wikidataEntityModel);
+            } else {
+                wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
+                        "org.deepamehta.wikidata.item");
+            }
+            Topic wikidataTopic = dms.createTopic(wikidataItemTopicModel);
+            if (wikidataTopic != null) {
+                // OK
+                workspaceService.assignToWorkspace(wikidataTopic, wikidataWorkspace.getId());
+            } else {
+                log.warning(" Could not create Wikidata Topic for item " + itemId);
+            }
+        } catch (Exception re) {
+            throw new RuntimeException("ERROR: Could not create wikidata item topic", re);
+        }
+    }
+
+    private void updateWikidataItem (Topic item, String name, String alias, String description, ChildTopicsModel
+            languageModel, String languageCode) {
+        if (item.getChildTopics().getModel().has("org.deepamehta.wikidata.entity_value")) {
+            List<RelatedTopicModel> existingValues;
+            existingValues = item.getModel().getChildTopicsModel().getTopics("org.deepamehta.wikidata.entity_value");
+            boolean existing = false;
+            for (TopicModel el : existingValues) {
+                String existingLanguageValueCode = el.getChildTopicsModel().getString("org.deepamehta.wikidata.language_code");
+                if (existingLanguageValueCode.equals(languageCode)) {
+                    existing = true;
+                    // ## skip updating values during development
+                    /** DeepaMehtaTransaction tx = dms.beginTx();
+                     // log.info("Updating existing values for language " + language_code + " and item " + itemId);
+                     if (name != null) {
+                     el.getChildTopicsModel().put("org.deepamehta.wikidata.label_value", name);
+                     }
+                     if (alias != null) {
+                     el.getChildTopicsModel().put("org.deepamehta.wikidata.alias_value", alias);
+                     }
+                     if (description != null) {
+                     el.getChildTopicsModel().put("org.deepamehta.wikidata.description_value", description);
+                     }
+                     if (name != null || alias != null || description != null) {
+                     TopicModel existingItem = item.getModel();
+                     existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
+                     new TopicModel("org.deepamehta.wikidata.entity_value", el.getChildTopicsModel()));
+                     dms.updateTopic(existingItem);
+                     tx.success();
+                     tx.finish();
+                     break;
+                     }**/
                 }
-                if (!existing) {
-                    DeepaMehtaTransaction tx = dms.beginTx();
-                    // log.info("Creating and appending values for language " + language_code + " and item " + itemId);
-                    if (name != null) {
-                        languagedValueModel.put("org.deepamehta.wikidata.label_value", name);
-                    }
-                    if (alias != null) {
-                        languagedValueModel.put("org.deepamehta.wikidata.alias_value", alias);
-                    }
-                    if (description != null) {
-                        languagedValueModel.put("org.deepamehta.wikidata.description_value", description);
-                    }
-                    if (name != null || alias != null || description != null) {
-                        TopicModel existingItem = item.getModel();
-                        existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
-                                new TopicModel("org.deepamehta.wikidata.entity_value", languagedValueModel));
-                        dms.updateTopic(existingItem);
-                        tx.success();
-                        tx.finish();
-                    }
+            }
+            if (!existing) {
+                // log.info("Creating and appending values for language " + language_code + " and item " + itemId);
+                if (name != null) {
+                    languageModel.put("org.deepamehta.wikidata.label_value", name);
+                }
+                if (alias != null) {
+                    languageModel.put("org.deepamehta.wikidata.alias_value", alias);
+                }
+                if (description != null) {
+                    languageModel.put("org.deepamehta.wikidata.description_value", description);
+                }
+                if (name != null || alias != null || description != null) {
+                    TopicModel existingItem = item.getModel();
+                    existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
+                            new TopicModel("org.deepamehta.wikidata.entity_value", languageModel));
+                    dms.updateTopic(existingItem);
                 }
             }
         }
@@ -690,7 +697,6 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                     // tx.success();
                 // } else {
                 if (!item.getChildTopics().has("dm4.geomaps.geo_coordinate")) { // during dev we stick to one coordinate per item
-                    DeepaMehtaTransaction tx = dms.beginTx();
                     try {
                         // log.info(" > Creating NEW Geo Coordinates for item " + itemId + " at " + coordinates);
                         ChildTopicsModel geoCoordinates = new ChildTopicsModel();
@@ -710,12 +716,8 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                         TopicModel updatedItem = item.getModel();
                         updatedItem.getChildTopicsModel().put("dm4.geomaps.geo_coordinate", geoCoordinatesModel);
                         dms.updateTopic(updatedItem);
-                        tx.success();
                     } catch (Exception error) {
                         log.log(Level.SEVERE, "could not attach coordinates to item " + itemId, error);
-                        tx.failure();
-                    } finally {
-                        tx.finish();
                     }
                 }
         } else { // no wikidata item found
@@ -728,9 +730,9 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         Topic latitudeTopic = dms.getTopic("dm4.geomaps.latitude", new SimpleValue(coordinates[1]));
         Topic longitudeTopic = dms.getTopic("dm4.geomaps.longitude", new SimpleValue(coordinates[0]));
         if (latitudeTopic != null && longitudeTopic != null) {
-            RelatedTopic latitudeParent = latitudeTopic.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
+            RelatedTopic latitudeParent = latitudeTopic.getRelatedTopic("dm4.core.composition", "dm4.core.child",
                 "dm4.core.parent", "dm4.geomaps.geo_coordinate");
-            RelatedTopic longitudeParent = longitudeTopic.getRelatedTopic("dm4.core.composition", "dm4.core.child", 
+            RelatedTopic longitudeParent = longitudeTopic.getRelatedTopic("dm4.core.composition", "dm4.core.child",
                 "dm4.core.parent", "dm4.geomaps.geo_coordinate");
             if (latitudeParent.getId() == longitudeParent.getId()) {
                 // if both values share the same parent, return the geo-coordinate topic value
@@ -739,8 +741,8 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         }
         return null;
     } **/
-    
-    /** 
+
+    /**
      * Store timestamps for an edge qualifying it's lifetime in our DB.
      */
     private void storeQualifyingTimeProperties(Association claim, Statement s) {
@@ -754,7 +756,6 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         for (SnakGroup statement : qualifierGroups) {
             if (statement.getProperty().getId().contains(WikidataEntityMap.STARTED_AT)) {
                 for (Snak snak : statement.getSnaks()) {
-                    DeepaMehtaTransaction tx = dms.beginTx();
                     try {
                         Value snakValue = ((ValueSnak) snak).getValue(); // JacksonNoValueSnack or NoValueSnack will throw an exception
                         if (snakValue instanceof TimeValue || snakValue instanceof JacksonValueTime) {
@@ -767,19 +768,14 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                                 if (date != null) {
                                     log.info(">> Statement ("+statement.getProperty().getId()+") has a qualified START_DATE: " + date.getTime() + " (Year: " + value.getYear() + ")");
                                     claim.setProperty(WIKIDATA_START_TIME_PROP, date.getTime(), true);
-                                    tx.success();
                                 }
                         }
                     } catch (Exception e) {
                         log.log(Level.WARNING, "Could not parse and convert TimeValue into a Date, due to a ", e);
-                        tx.failure();
-                    } finally {
-                        tx.finish();
                     }
                 }
             } else if (statement.getProperty().getId().contains(WikidataEntityMap.ENDED_AT)) {
                 for (Snak snak : statement.getSnaks()) {
-                    DeepaMehtaTransaction tx = dms.beginTx();
                     try {
                         Value snakValue = ((ValueSnak) snak).getValue(); // JacksonNoValueSnack or NoValueSnack will throw an exception
                         if (snakValue instanceof TimeValue || snakValue instanceof JacksonValueTime) {
@@ -792,43 +788,36 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                             if (date != null) {
                                 log.info(">> Statement ("+statement.getProperty().getId()+") has a qualified END_DATE: " + date.getTime() + " (Year: " + value.getYear() + ")");
                                 claim.setProperty(WIKIDATA_END_TIME_PROP, date.getTime(), true);
-                                tx.success();
                             }
                         }
                     } catch (Exception e) {
                         log.log(Level.WARNING, "Could not parse and convert TimeValue into a Date, due to a ", e);
-                        tx.failure();
-                    } finally {
-                        tx.finish();
                     }
                 }
             }
         }
     }
-    
+
     /** ### see Ticket 804 private Topic getLatitudeTopicByValue(double value) {
         return dms.getTopic("dm4.geomaps.latitude", new SimpleValue(value));
     }
-    
+
     private Topic getLongitudeTopicByValue(double value) {
         return dms.getTopic("dm4.geomaps.longitude", new SimpleValue(value));
     } **/
-    
+
     private Topic getLanguageIsoCodeTopicByValue(String iso_code) {
         return dms.getTopic("org.deepamehta.wikidata.language_code", new SimpleValue(iso_code));
     }
-    
+
     private Topic getWikidataTextTopic(String text_value) {
         if (text_value.contains("\"")) text_value = text_value.replaceAll("\"", "");
         return dms.getTopic("org.deepamehta.wikidata.text", new SimpleValue(text_value));
     }
-    
+
     private Topic createWikidataTextTopic(String text_value) {
-        DeepaMehtaTransaction tx = dms.beginTx();
         if (text_value.contains("\"")) text_value = text_value.replaceAll("\"", "");
         Topic countryCode = dms.createTopic(new TopicModel("org.deepamehta.wikidata.text", new SimpleValue(text_value)));
-        tx.success();
-        tx.finish();
         return countryCode;
     }
 
@@ -884,7 +873,6 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 assocModel = new ChildTopicsModel()
                     .putRef("org.deepamehta.wikidata.property", propertyEntityTopic.getId());
             }
-            DeepaMehtaTransaction tx = dms.beginTx();
             try {
                 relation = dms.createAssociation(new AssociationModel(relationType,
                         new TopicRoleModel(fromPlayer.getId(), "dm4.core.default"),
@@ -897,12 +885,8 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                     workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
                     // relation.setSimpleValue(relationName);
                 }
-                tx.success();
             } catch (Exception e) {
                 log.log(Level.SEVERE, e.getMessage(), e);
-                tx.failure();
-            } finally {
-                tx.finish();
             }
         } // wikidata claim edge relation (with default, default) ### already exists
         return relation;
@@ -921,7 +905,6 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
             textTopic = createWikidataTextTopic(textValue);
         }
         if (!hierarchicalAssociationAlreadyExists(fromPlayer.getId(), textTopic.getId(), relationType)) {
-            DeepaMehtaTransaction tx = dms.beginTx();
             try {
                 relation = dms.createAssociation(new AssociationModel(relationType,
                         new TopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
@@ -934,12 +917,9 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                     workspaceService.assignToWorkspace(relation, wikidataWorkspace.getId());
                     // relation.setSimpleValue(relationName);
                 }
-                tx.success();
+
             } catch (Exception e) {
                 log.log(Level.SEVERE, e.getMessage(), e);
-                tx.failure();
-            } finally {
-                tx.finish();
             }
         } // wikidata text claim (with text as child forItemId arleady exists)
     }
@@ -997,8 +977,12 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
      * Stops the processing and prints the final time.
      */
     public void stop() {
+        if (tx != null) {
+            tx.success();
+            tx.finish();
+        }
         printProcessingStatus();
-        log.info("### Start creating Topics ...");
+        log.info("Wikidata Timestamps Start: "+importStartedAt.toGMTString()+" Stop:" + new Date().toGMTString());
         log.info("Finished importing.");
         this.timer.stop();
         this.lastSeconds = (int) (timer.getTotalWallTime() / 1000000000);

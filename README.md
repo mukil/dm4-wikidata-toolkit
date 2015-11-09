@@ -41,9 +41,14 @@ You can do GET requests like the following and return a simple list of JSON topi
 - `/wdtk/list/claims/P27/Q183`
    Responding with a list of all claims made using the _citizen of_ property where one player is the Country _Germany_
 
-For an example, GET: 
-- http://wikidata-topics.beta.wmflabs.org/wdtk/list/P108/Q9531 or
-- http://wikidata-topics.beta.wmflabs.org/wdtk/list/claims/P108
+Here on the `geo-fronts` branch we're developing new experimental endpoints, three current are:
+
+- `/wdtk/list/items/iso-coded`<br/>
+   Responding with a list of wikidata items we know the Three Letter IS Codes for.   
+- `/wdtk/list/items/osm-relations`
+   Responding with a list of wikidata items we know the OSM Relation IDs for.
+- `/wdtk/list/items/nuts-coded`
+   Responding with a list of wikidata items we know the NUTS code for
 
 No optimizations done yet, just operating by deepamehta4 standard means (but it maybe noteworthy that @jri already solved the super-node problem for the dm4 storage layer).
 
@@ -56,6 +61,13 @@ You can find some background infos (but outdated details) on the project page in
 This software is released under the terms of the GNU General Public License in Version 3.0, 2007. You can find a copy of that in the root directory of this repository or read it [here](http://www.gnu.org/licenses/gpl).
 
 # Version History
+
+0.3, UPCOMING
+- Generic implementation of a Geodata Processor (no DM 4 Topic Types involved)
+- Reduced number of transactions involved to "some thousands" of topics
+- Introduced three new custom Association Types (OSM Relation ID, NUTS Code, ISO Code)
+- Qualifying some type of claims
+- Compatible with DM 4.6
 
 0.2, 14. April 2015
 - Importing _Persons_, _Institutions_, _Cities_ and _Countries_ (using the _instance of_ property)

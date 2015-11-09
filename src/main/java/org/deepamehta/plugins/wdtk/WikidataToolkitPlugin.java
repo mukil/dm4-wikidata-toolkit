@@ -1,6 +1,27 @@
 
 package org.deepamehta.plugins.wdtk;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response.Status;
+
+import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
+import org.deepamehta.plugins.wdtk.viewmodel.CountryItem;
+import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
+
+import de.deepamehta.core.Association;
 import de.deepamehta.core.AssociationType;
 import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.RelatedAssociation;
@@ -13,18 +34,6 @@ import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.workspaces.service.WorkspacesService;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response.Status;
-import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
-import org.deepamehta.plugins.wdtk.viewmodel.CountryItem;
-import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
 
 
@@ -99,6 +108,75 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         for (RelatedTopic isoCode : all) {
             CountryItem item = new CountryItem(isoCode);
             if (item.isCountry()) results.add(item);
+        }
+        return results;
+    }
+    
+    @GET
+    @Path("/list/items/iso-coded")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<Topic> getAllItemsWithIsoCodes() {
+        ArrayList<Topic> results = new ArrayList<Topic>();
+        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        // all results
+        for (RelatedTopic isoCode : textValues) {
+        	List<Association> assocs = isoCode.getAssociations();
+        	for (Association assoc : assocs) {
+        		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.iso_country_code")) {
+        			// OK, lets' add the parent wikidata item of this iso code to our resultset 
+    				if (assoc.getPlayer1().getId() == isoCode.getId()) {
+    					results.add(dms.getTopic(assoc.getPlayer2().getId()));
+    				} else {
+    					results.add(dms.getTopic(assoc.getPlayer1().getId()));
+    				}
+        		}
+        	}
+        }
+        return results;
+    }
+    
+    @GET
+    @Path("/list/items/osm-relations")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<Topic> getAllItemsWithOSMRelations() {
+        ArrayList<Topic> results = new ArrayList<Topic>();
+        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        // all results
+        for (RelatedTopic isoCode : textValues) {
+        	List<Association> assocs = isoCode.getAssociations();
+        	for (Association assoc : assocs) {
+        		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.osm_relation_id")) {
+        			// OK, lets' add the parent wikidata item of this iso code to our resultset 
+    				if (assoc.getPlayer1().getId() == isoCode.getId()) {
+    					results.add(dms.getTopic(assoc.getPlayer2().getId()));
+    				} else {
+    					results.add(dms.getTopic(assoc.getPlayer1().getId()));
+    				}
+        		}
+        	}
+        }
+        return results;
+    }
+    
+    @GET
+    @Path("/list/items/nuts-coded")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<Topic> getAllItemsWithNutsCodes() {
+        ArrayList<Topic> results = new ArrayList<Topic>();
+        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        // all results
+        for (RelatedTopic isoCode : textValues) {
+        	List<Association> assocs = isoCode.getAssociations();
+        	for (Association assoc : assocs) {
+        		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.nuts_code")) {
+        			// OK, lets' add the parent wikidata item of this iso code to our resultset 
+    				if (assoc.getPlayer1().getId() == isoCode.getId()) {
+    					results.add(dms.getTopic(assoc.getPlayer2().getId()));
+    				} else {
+    					results.add(dms.getTopic(assoc.getPlayer1().getId()));
+    				}
+        		}
+        	}
         }
         return results;
     }
@@ -311,7 +389,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     // --
 
     private void checkAuthorization () {
-        if (!acService.getUsername().equals("admin")) throw new WebApplicationException(Status.UNAUTHORIZED);
+        if (acService.getUsername() == null || acService.getUsername().isEmpty()) {
+            throw new WebApplicationException(Status.UNAUTHORIZED);
+        }
     }
 
     // ### remove copy in WikidataEntityProcessor
