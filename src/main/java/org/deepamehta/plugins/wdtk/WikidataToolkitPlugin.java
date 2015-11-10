@@ -3,7 +3,6 @@ package org.deepamehta.plugins.wdtk;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,7 +16,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 
-import org.deepamehta.plugins.wdtk.service.WikidataToolkitService;
 import org.deepamehta.plugins.wdtk.viewmodel.CountryItem;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
@@ -32,8 +30,8 @@ import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
-import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
-import de.deepamehta.plugins.workspaces.service.WorkspacesService;
+import de.deepamehta.plugins.accesscontrol.AccessControlService;
+import de.deepamehta.plugins.workspaces.WorkspacesService;
 
 
 
@@ -65,26 +63,26 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     private final String WD_IMPORT_DESCRIPTIONS = "org.deepamehta.wikidata.dumpfile_descriptions";
     private final String WD_IMPORT_WEBSITES = "org.deepamehta.wikidata.dumpfile_websites";
     private final String WD_IMPORT_COORDINATES = "org.deepamehta.wikidata.dumpfile_coordinates";
-    
+
     // private final String WIKIDATA_PROPERTY_ENTITY_URL_PREFIX = "Property:";
-    
+
     // --- Instance Variables
-    
+
     // private String dumpFilePath = ""; // ### make dumpfile location configurable
     // prevents corrupting the db because of parallel imports/transactions
     private boolean isCurrentlyImporting = false;
-    
+
     @Inject
     private AccessControlService acService = null;
-    
+
     @Inject
     private WorkspacesService wsService = null;
 
-    
+
     // --
     // --- Public REST API Endpoints
     // --
-    
+
     @GET
     @Path("/import/entities/{importerId}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -97,13 +95,13 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         importWikidataEntities(settings);
         return settings;
     }
-    
+
     @GET
     @Path("/list/countries")
     @Produces(MediaType.APPLICATION_JSON)
     public ArrayList<CountryItem> getAllCountryItems() {
         //
-        ArrayList<CountryItem> results = new ArrayList();
+        ArrayList<CountryItem> results = new ArrayList<CountryItem>();
         ResultList<RelatedTopic> all = dms.getTopics("org.deepamehta.wikidata.text", 0);
         for (RelatedTopic isoCode : all) {
             CountryItem item = new CountryItem(isoCode);
@@ -111,7 +109,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         }
         return results;
     }
-    
+
     @GET
     @Path("/list/items/iso-coded")
     @Produces(MediaType.APPLICATION_JSON)
@@ -123,7 +121,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         	List<Association> assocs = isoCode.getAssociations();
         	for (Association assoc : assocs) {
         		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.iso_country_code")) {
-        			// OK, lets' add the parent wikidata item of this iso code to our resultset 
+        			// OK, lets' add the parent wikidata item of this iso code to our resultset
     				if (assoc.getPlayer1().getId() == isoCode.getId()) {
     					results.add(dms.getTopic(assoc.getPlayer2().getId()));
     				} else {
@@ -134,7 +132,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         }
         return results;
     }
-    
+
     @GET
     @Path("/list/items/osm-relations")
     @Produces(MediaType.APPLICATION_JSON)
@@ -146,7 +144,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         	List<Association> assocs = isoCode.getAssociations();
         	for (Association assoc : assocs) {
         		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.osm_relation_id")) {
-        			// OK, lets' add the parent wikidata item of this iso code to our resultset 
+        			// OK, lets' add the parent wikidata item of this iso code to our resultset
     				if (assoc.getPlayer1().getId() == isoCode.getId()) {
     					results.add(dms.getTopic(assoc.getPlayer2().getId()));
     				} else {
@@ -157,7 +155,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         }
         return results;
     }
-    
+
     @GET
     @Path("/list/items/nuts-coded")
     @Produces(MediaType.APPLICATION_JSON)
@@ -169,7 +167,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         	List<Association> assocs = isoCode.getAssociations();
         	for (Association assoc : assocs) {
         		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.nuts_code")) {
-        			// OK, lets' add the parent wikidata item of this iso code to our resultset 
+        			// OK, lets' add the parent wikidata item of this iso code to our resultset
     				if (assoc.getPlayer1().getId() == isoCode.getId()) {
     					results.add(dms.getTopic(assoc.getPlayer2().getId()));
     				} else {
@@ -180,7 +178,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         }
         return results;
     }
-    
+
     @GET
     @Path("/delete/topics/{importerId}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -398,7 +396,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     private Topic getWikidataItemByEntityId (String id) {
         return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id));
     }
-        
+
     private void importWikidataEntities(Topic importerSettings) {
         // ### read in settings stored as child topics
         ChildTopics childs = importerSettings.getChildTopics();
@@ -412,12 +410,12 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean descriptions = childs.getBoolean(WD_IMPORT_DESCRIPTIONS);
         boolean websites = childs.getBoolean(WD_IMPORT_WEBSITES);
         boolean geoCoordinates = childs.getBoolean(WD_IMPORT_COORDINATES);
-        WikidataGeodataProcessor wikidataEntityProcessor = new WikidataGeodataProcessor(dms, wsService, timeOut, 
+        WikidataGeodataProcessor wikidataEntityProcessor = new WikidataGeodataProcessor(dms, wsService, timeOut,
                 persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode);
         WikidataToolkitPlugin.this.startProcessingWikidataDumpfile(wikidataEntityProcessor, noDownload);
         wikidataEntityProcessor = null;
     }
-    
+
     /**
      * Processes all entities in a Wikidata dump using the given entity
      * processor. By default, the most recent JSON dump will be used. In offline
@@ -473,5 +471,5 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         }
         return "";
     }
-    
+
 }

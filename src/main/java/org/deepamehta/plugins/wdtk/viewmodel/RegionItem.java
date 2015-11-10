@@ -4,11 +4,12 @@ import de.deepamehta.core.DeepaMehtaObject;
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.service.ResultList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.deepamehta.plugins.wdtk.WikidataEntityMap;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -58,8 +59,7 @@ public class RegionItem implements JSONEnabled {
                 // .put("osm_relation_id", getOSMRelationId())
                 // .put("nuts_code", getNUTSCode());
         } catch (JSONException ex) {
-            Logger.getLogger(RegionItem.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
+            throw new RuntimeException(ex);
         }
     }
 

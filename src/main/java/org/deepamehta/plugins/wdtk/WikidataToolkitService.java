@@ -1,10 +1,9 @@
 
-package org.deepamehta.plugins.wdtk.service;
+package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.RelatedAssociation;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.ResultList;
 import java.util.ArrayList;
 
@@ -14,7 +13,7 @@ import java.util.ArrayList;
  * @website https://github.com/mukil/dm4-wikidata-toolkit
  * @version 0.2
  */
-public interface WikidataToolkitService extends PluginService {
+public interface WikidataToolkitService {
 
     Topic importEntitiesFromWikidataDump (long settingsTopicId);
     

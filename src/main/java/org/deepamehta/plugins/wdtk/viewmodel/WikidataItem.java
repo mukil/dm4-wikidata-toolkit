@@ -3,12 +3,11 @@ package org.deepamehta.plugins.wdtk.viewmodel;
 import de.deepamehta.core.DeepaMehtaObject;
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.Topic;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.deepamehta.plugins.wdtk.WikidataEntityMap;
+
+import java.util.logging.Logger;
 
 /**
  *
@@ -57,8 +56,7 @@ public class WikidataItem implements JSONEnabled {
                 .put("topic_id", item.getId())
                 .put("coordinate", coordinates);
         } catch (JSONException ex) {
-            Logger.getLogger(WikidataItem.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
+            throw new RuntimeException(ex);
         }
     }
 

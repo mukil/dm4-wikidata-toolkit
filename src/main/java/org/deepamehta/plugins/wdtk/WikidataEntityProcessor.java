@@ -11,7 +11,7 @@ import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.workspaces.service.WorkspacesService;
+import de.deepamehta.plugins.workspaces.WorkspacesService;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;

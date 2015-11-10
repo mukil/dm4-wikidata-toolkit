@@ -2,7 +2,7 @@ package org.deepamehta.plugins.wdtk;
 
 /**
  *
- * @author bob
+ * @author <malte@mikromedia.de> Malte Reißig
  */
 public class WikidataEntityMap {
     

@@ -6,31 +6,31 @@
 
     <name>DeepaMehta 4 Wikidata Toolkit</name>
     <groupId>org.deepamehta</groupId>
-    <artifactId>dm46-wikidata-toolkit</artifactId>
+    <artifactId>dm47-wikidata-toolkit</artifactId>
     <version>0.3-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
     <parent>
         <groupId>de.deepamehta</groupId>
         <artifactId>deepamehta-plugin-parent</artifactId>
-        <version>4.6</version>
+        <version>4.7</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-workspaces</artifactId>
-            <version>4.6</version>
+            <version>4.7</version>
         </dependency>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-accesscontrol</artifactId>
-            <version>4.6</version>
+            <version>4.7</version>
         </dependency>
         <dependency>
             <groupId>de.deepamehta</groupId>
             <artifactId>deepamehta-contacts</artifactId>
-            <version>4.6</version>
+            <version>4.7</version>
         </dependency>
         <dependency>
             <groupId>org.wikidata.wdtk</groupId>
@@ -113,7 +113,7 @@
                             org.deepamehta.wikidata-toolkit
                         </Bundle-SymbolicName>
                         <Import-Package>
-                            de.deepamehta.core.*, de.deepamehta.plugins.workspaces.service,
+                            de.deepamehta.core.*, de.deepamehta.plugins.workspaces.*,
                             de.deepamehta.plugins.accesscontrol.*, org.codehaus.jettison.json.*, !org.w3c.dom.*,
                             javax.crypto.*, javax.ws.rs.*, javax.xml.*,
                             org.xml.sax.*, org.slf4j.*,

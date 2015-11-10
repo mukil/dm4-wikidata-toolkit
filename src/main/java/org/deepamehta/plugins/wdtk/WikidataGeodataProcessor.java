@@ -2,39 +2,21 @@ package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.Association;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.AssociationModel;
-import de.deepamehta.core.model.ChildTopicsModel;
-import de.deepamehta.core.model.RelatedTopicModel;
-import de.deepamehta.core.model.SimpleValue;
-import de.deepamehta.core.model.TopicModel;
-import de.deepamehta.core.model.TopicRoleModel;
+import de.deepamehta.core.model.*;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.workspaces.service.WorkspacesService;
+import de.deepamehta.plugins.workspaces.WorkspacesService;
+import org.wikidata.wdtk.datamodel.interfaces.*;
+import org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueTime;
+import org.wikidata.wdtk.util.Timer;
+
+import javax.ws.rs.WebApplicationException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.ws.rs.WebApplicationException;
-import org.wikidata.wdtk.datamodel.interfaces.EntityDocumentProcessor;
-import org.wikidata.wdtk.datamodel.interfaces.EntityIdValue;
-import org.wikidata.wdtk.datamodel.interfaces.GlobeCoordinatesValue;
-import org.wikidata.wdtk.datamodel.interfaces.ItemDocument;
-import org.wikidata.wdtk.datamodel.interfaces.MonolingualTextValue;
-import org.wikidata.wdtk.datamodel.interfaces.PropertyDocument;
-import org.wikidata.wdtk.datamodel.interfaces.PropertyIdValue;
-import org.wikidata.wdtk.datamodel.interfaces.Snak;
-import org.wikidata.wdtk.datamodel.interfaces.SnakGroup;
-import org.wikidata.wdtk.datamodel.interfaces.Statement;
-import org.wikidata.wdtk.datamodel.interfaces.StatementGroup;
-import org.wikidata.wdtk.datamodel.interfaces.StringValue;
-import org.wikidata.wdtk.datamodel.interfaces.TimeValue;
-import org.wikidata.wdtk.datamodel.interfaces.Value;
-import org.wikidata.wdtk.datamodel.interfaces.ValueSnak;
-import org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueTime;
-import org.wikidata.wdtk.util.Timer;
 
 /**
  * @author Malte Rei&szlig;ig <malte@mikromedia.de>
@@ -131,7 +113,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         String label = getItemLabel(itemDocument);
         String description = getItemDescription(itemDocument);
 
-        /** Optimization: pass on current wikidata item topic instead of fetching it all the time */
+        /** ### Optimization: pass on current wikidata item topic instead of fetching it all the time */
         Topic wikidataItem = null;
 
         // 1) Iterate over items statement groups
@@ -982,7 +964,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
             tx.finish();
         }
         printProcessingStatus();
-        log.info("Wikidata Timestamps Start: "+importStartedAt.toGMTString()+" Stop:" + new Date().toGMTString());
+        log.info("Wikidata Timestamps Start: "+importStartedAt.toString() +" Stop:" + new Date().toString());
         log.info("Finished importing.");
         this.timer.stop();
         this.lastSeconds = (int) (timer.getTotalWallTime() / 1000000000);

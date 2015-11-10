@@ -5,14 +5,15 @@ import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.service.ResultList;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.deepamehta.plugins.wdtk.WikidataEntityMap;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -53,7 +54,7 @@ public class CountryItem implements JSONEnabled {
     }
     
     public ArrayList<RegionItem> listSubregions() {
-        ArrayList<RegionItem> regions = new ArrayList();
+        ArrayList<RegionItem> regions = new ArrayList<RegionItem>();
         List<Association> claims = this.item.getAssociations();
         for (Association claim : claims) {
             if (claim.getTypeUri().equals("org.deepamehta.wikidata.claim_edge")) {
@@ -80,7 +81,7 @@ public class CountryItem implements JSONEnabled {
     }
     
     public ArrayList<WikidataItem> getItemsInCountry() {
-        ArrayList<WikidataItem> cities = new ArrayList();
+        ArrayList<WikidataItem> cities = new ArrayList<WikidataItem>();
         List<Association> claims = this.item.getAssociations();
         for (Association claim : claims) {
             if (claim.getTypeUri().equals("org.deepamehta.wikidata.claim_edge")) {
@@ -124,8 +125,7 @@ public class CountryItem implements JSONEnabled {
                 // .put("regions", regions)
                 .put("items", items);
         } catch (JSONException ex) {
-            log.log(Level.SEVERE, null, ex);
-            return null;
+            throw new RuntimeException(ex);
         }
     }
     
