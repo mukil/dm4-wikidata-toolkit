@@ -569,7 +569,6 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         }
     }
 
-
     private void createWikidataItem(String itemId, String name, String alias, String description, Topic lang) {
         try {
             TopicModel wikidataItemTopicModel = null;
@@ -578,7 +577,8 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
             if (lang != null) {
                 languagedValueModel.putRef("org.deepamehta.wikidata.language_code", lang.getId());
             } else {
-                languagedValueModel.put("org.deepamehta.wikidata.language_code", lang);
+                // ### lang IS null, set to "en" for now, TODO: Import dm4-wikidata migration on language code topics
+                languagedValueModel.put("org.deepamehta.wikidata.language_code", "en");
             }
             if (name != null) {
                 languagedValueModel.put("org.deepamehta.wikidata.label_value", name);
@@ -620,7 +620,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                 String existingLanguageValueCode = el.getChildTopicsModel().getString("org.deepamehta.wikidata.language_code");
                 if (existingLanguageValueCode.equals(languageCode)) {
                     existing = true;
-                    // ## skip updating values during development
+                    // ## TODO: updating language based values during development
                     /** DeepaMehtaTransaction tx = dms.beginTx();
                      // log.info("Updating existing values for language " + language_code + " and item " + itemId);
                      if (name != null) {
@@ -789,6 +789,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     } **/
 
     private Topic getLanguageIsoCodeTopicByValue(String iso_code) {
+        // ### TODO: These language value topics are only present when the dm4-wikidata module is also installed.
         return dms.getTopic("org.deepamehta.wikidata.language_code", new SimpleValue(iso_code));
     }
 

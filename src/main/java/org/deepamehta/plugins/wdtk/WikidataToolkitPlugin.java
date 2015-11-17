@@ -97,89 +97,6 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     }
 
     @GET
-    @Path("/list/countries")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<CountryItem> getAllCountryItems() {
-        //
-        ArrayList<CountryItem> results = new ArrayList<CountryItem>();
-        ResultList<RelatedTopic> all = dms.getTopics("org.deepamehta.wikidata.text", 0);
-        for (RelatedTopic isoCode : all) {
-            CountryItem item = new CountryItem(isoCode);
-            if (item.isCountry()) results.add(item);
-        }
-        return results;
-    }
-
-    @GET
-    @Path("/list/items/iso-coded")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<Topic> getAllItemsWithIsoCodes() {
-        ArrayList<Topic> results = new ArrayList<Topic>();
-        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
-        // all results
-        for (RelatedTopic isoCode : textValues) {
-        	List<Association> assocs = isoCode.getAssociations();
-        	for (Association assoc : assocs) {
-        		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.iso_country_code")) {
-        			// OK, lets' add the parent wikidata item of this iso code to our resultset
-    				if (assoc.getPlayer1().getId() == isoCode.getId()) {
-    					results.add(dms.getTopic(assoc.getPlayer2().getId()));
-    				} else {
-    					results.add(dms.getTopic(assoc.getPlayer1().getId()));
-    				}
-        		}
-        	}
-        }
-        return results;
-    }
-
-    @GET
-    @Path("/list/items/osm-relations")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<Topic> getAllItemsWithOSMRelations() {
-        ArrayList<Topic> results = new ArrayList<Topic>();
-        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
-        // all results
-        for (RelatedTopic isoCode : textValues) {
-        	List<Association> assocs = isoCode.getAssociations();
-        	for (Association assoc : assocs) {
-        		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.osm_relation_id")) {
-        			// OK, lets' add the parent wikidata item of this iso code to our resultset
-    				if (assoc.getPlayer1().getId() == isoCode.getId()) {
-    					results.add(dms.getTopic(assoc.getPlayer2().getId()));
-    				} else {
-    					results.add(dms.getTopic(assoc.getPlayer1().getId()));
-    				}
-        		}
-        	}
-        }
-        return results;
-    }
-
-    @GET
-    @Path("/list/items/nuts-coded")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<Topic> getAllItemsWithNutsCodes() {
-        ArrayList<Topic> results = new ArrayList<Topic>();
-        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
-        // all results
-        for (RelatedTopic isoCode : textValues) {
-        	List<Association> assocs = isoCode.getAssociations();
-        	for (Association assoc : assocs) {
-        		if (assoc.getTypeUri().equals("org.deepamehta.wikidata.nuts_code")) {
-        			// OK, lets' add the parent wikidata item of this iso code to our resultset
-    				if (assoc.getPlayer1().getId() == isoCode.getId()) {
-    					results.add(dms.getTopic(assoc.getPlayer2().getId()));
-    				} else {
-    					results.add(dms.getTopic(assoc.getPlayer1().getId()));
-    				}
-        		}
-        	}
-        }
-        return results;
-    }
-
-    @GET
     @Path("/delete/topics/{importerId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
@@ -235,8 +152,103 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         return importerSettings;
     }
 
+    // --- Specific "Listing" Endpoints
+
+    @GET
+    @Path("/list/countries")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<CountryItem> getAllCountryItems() {
+        //
+        ArrayList<CountryItem> results = new ArrayList<CountryItem>();
+        ResultList<RelatedTopic> all = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        log.info("Requested all countries (identified via iso-code), fetched " + all.size());
+        for (RelatedTopic textValue : all) {
+            CountryItem item = new CountryItem(textValue);
+            if (item.isCountry()) results.add(item);
+        }
+        log.info("Fetched " + reslts.size() + " countries via ISO Code");
+        return results;
+    }
+
+    @GET
+    @Path("/list/items/iso-coded")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<Topic> getAllItemsWithIsoCodes() {
+        log.info("Requested all wikidata items with an \"ISO Three Letter Code\"");
+        ArrayList<Topic> results = new ArrayList<Topic>();
+        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        // all results
+        for (RelatedTopic textValue : textValues) {
+            List<Association> assocs = textValue.getAssociations();
+            for (Association assoc : assocs) {
+                if (assoc.getTypeUri().equals("org.deepamehta.wikidata.iso_country_code")) {
+                    // OK, lets' add the parent wikidata item of this iso code to our resultset
+                    if (assoc.getPlayer1().getId() == textValue.getId()) {
+                        results.add(dms.getTopic(assoc.getPlayer2().getId()));
+                    } else {
+                        results.add(dms.getTopic(assoc.getPlayer1().getId()));
+                    }
+                }
+            }
+        }
+        log.info("> Fetched " + results.size() + " iso coded wikidata items");
+        return results;
+    }
+
+    @GET
+    @Path("/list/items/osm-relations")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<Topic> getAllItemsWithOSMRelations() {
+        log.info("Requested all wikidata items with an \"OSM Relation ID\"");
+        ArrayList<Topic> results = new ArrayList<Topic>();
+        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        // all results
+        for (RelatedTopic textValue : textValues) {
+            List<Association> assocs = textValue.getAssociations();
+            for (Association assoc : assocs) {
+                if (assoc.getTypeUri().equals("org.deepamehta.wikidata.osm_relation_id")) {
+                    // OK, lets' add the parent wikidata item of this iso code to our resultset
+                    if (assoc.getPlayer1().getId() == textValue.getId()) {
+                        results.add(dms.getTopic(assoc.getPlayer2().getId()));
+                    } else {
+                        results.add(dms.getTopic(assoc.getPlayer1().getId()));
+                    }
+                }
+            }
+        }
+        log.info("> Fetched " + results.size() + " wikidata items with an OSM Relation ID");
+        return results;
+    }
+
+    @GET
+    @Path("/list/items/nuts-coded")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<Topic> getAllItemsWithNutsCodes() {
+        log.info("Requested all wikidata items with a \"NUTS Code\"");
+        ArrayList<Topic> results = new ArrayList<Topic>();
+        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        // all results
+        for (RelatedTopic textValue : textValues) {
+            List<Association> assocs = textValue.getAssociations();
+            for (Association assoc : assocs) {
+                if (assoc.getTypeUri().equals("org.deepamehta.wikidata.nuts_code")) {
+                    // OK, lets' add the parent wikidata item of this iso code to our resultset
+                    if (assoc.getPlayer1().getId() == textValue.getId()) {
+                        results.add(dms.getTopic(assoc.getPlayer2().getId()));
+                    } else {
+                        results.add(dms.getTopic(assoc.getPlayer1().getId()));
+                    }
+                }
+            }
+        }
+        log.info("> Fetched " + results.size() + " nuts coded wikidata items");
+        return results;
+    }
+
+    // --- The dm4-wdtk "Query" Endpoints supporting simple hops
+
     /**
-     * For example: Firing a GET to `/wdtk/query/P108/Q9531` will respond with
+     * For example: Firing a GET to `/wdtk/list/P108/Q9531` will respond with
      * a list of persons imported from wikidata formerly|currently employed by BBC.
      *
      * @param propertyId    String valid Wikidata Propery ID (e.g "P108")
