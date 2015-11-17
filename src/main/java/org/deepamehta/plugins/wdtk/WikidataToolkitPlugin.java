@@ -17,6 +17,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 
 import org.deepamehta.plugins.wdtk.viewmodel.CountryItem;
+import org.deepamehta.plugins.wdtk.viewmodel.RegionItem;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
 import de.deepamehta.core.Association;
@@ -161,12 +162,12 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         //
         ArrayList<CountryItem> results = new ArrayList<CountryItem>();
         ResultList<RelatedTopic> all = dms.getTopics("org.deepamehta.wikidata.text", 0);
-        log.info("Requested all countries (identified via iso-code), fetched " + all.size());
+        log.info("Requested all countries (identified via iso-code), fetched " + all.getSize());
         for (RelatedTopic textValue : all) {
             CountryItem item = new CountryItem(textValue);
             if (item.isCountry()) results.add(item);
         }
-        log.info("Fetched " + reslts.size() + " countries via ISO Code");
+        log.info("Fetched " + results.size() + " countries via ISO Code");
         return results;
     }
 
@@ -223,9 +224,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @GET
     @Path("/list/items/nuts-coded")
     @Produces(MediaType.APPLICATION_JSON)
-    public ArrayList<Topic> getAllItemsWithNutsCodes() {
+    public ArrayList<RegionItem> getAllItemsWithNutsCodes() {
         log.info("Requested all wikidata items with a \"NUTS Code\"");
-        ArrayList<Topic> results = new ArrayList<Topic>();
+        ArrayList<RegionItem> results = new ArrayList<RegionItem>();
         ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
         // all results
         for (RelatedTopic textValue : textValues) {
@@ -234,9 +235,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
                 if (assoc.getTypeUri().equals("org.deepamehta.wikidata.nuts_code")) {
                     // OK, lets' add the parent wikidata item of this iso code to our resultset
                     if (assoc.getPlayer1().getId() == textValue.getId()) {
-                        results.add(dms.getTopic(assoc.getPlayer2().getId()));
+                        results.add(new RegionItem(dms.getTopic(assoc.getPlayer2().getId())));
                     } else {
-                        results.add(dms.getTopic(assoc.getPlayer1().getId()));
+                        results.add(new RegionItem(dms.getTopic(assoc.getPlayer1().getId())));
                     }
                 }
             }

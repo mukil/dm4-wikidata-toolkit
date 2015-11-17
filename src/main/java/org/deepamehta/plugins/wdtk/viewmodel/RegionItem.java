@@ -53,11 +53,11 @@ public class RegionItem implements JSONEnabled {
     public JSONObject toJSON() {
         try {
             return new JSONObject()
-                // .put("default_name", item.getSimpleValue().toString())
+                .put("default_name", item.getSimpleValue().toString())
                 .put("topic_id", getId())
-                .put("uri", getUri().replace(WikidataEntityMap.WD_ENTITY_BASE_URI, ""));
-                // .put("osm_relation_id", getOSMRelationId())
-                // .put("nuts_code", getNUTSCode());
+                .put("uri", getUri().replace(WikidataEntityMap.WD_ENTITY_BASE_URI, ""))
+                .put("osm_relation_id", getOSMRelationId())
+                .put("nuts_code", getNUTSCode());
         } catch (JSONException ex) {
             throw new RuntimeException(ex);
         }
