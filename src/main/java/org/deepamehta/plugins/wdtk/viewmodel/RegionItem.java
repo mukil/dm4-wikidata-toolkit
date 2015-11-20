@@ -12,15 +12,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * A data transfer object for a wikidata item topic with a default label and additionally carrying
+ * * a NUTS Code,<br/>
+ * * an OSM Relation ID and,<br/>
+ * * an ISO Three Letter Code<br/>
+ * if *known*. If values are unknown, the values are initialized with the String value "undefined".
  *
- * @author malte
+ * <a href="https://github.com/mukil/dm4-wikidata-toolkit">Source Code Repository</a>
+ *
+ * @author Malte Reißig (<malte@mikromedia.de>)
+ * @version 0.3-SNAPSHOT
  */
 public class RegionItem implements JSONEnabled {
 
     DeepaMehtaObject item;
     long regionId;
     String uri;
-    static final String UNKNOWN_ID = "UNKNOWN";
+    static final String UNKNOWN_ID = "undefined";
 
     public RegionItem (DeepaMehtaObject item) {
         this.regionId = item.getId();
@@ -45,6 +53,13 @@ public class RegionItem implements JSONEnabled {
             "dm4.core.child", "org.deepamehta.wikidata.text", 1);
         return (nutsCodeValue.getSize() >= 1) ? nutsCodeValue.get(0).getSimpleValue().toString() : UNKNOWN_ID;
     }
+
+    public String getISOCode() {
+        if (item == null) return UNKNOWN_ID;
+        ResultList<RelatedTopic> nutsCodeValue = item.getRelatedTopics("org.deepamehta.wikidata.iso_country_code",
+                "dm4.core.parent", "dm4.core.child", "org.deepamehta.wikidata.text", 1);
+        return (nutsCodeValue.getSize() >= 1) ? nutsCodeValue.get(0).getSimpleValue().toString() : UNKNOWN_ID;
+    }
     
     public String getUri() {
         return this.uri;
@@ -55,9 +70,10 @@ public class RegionItem implements JSONEnabled {
             return new JSONObject()
                 .put("default_name", item.getSimpleValue().toString())
                 .put("topic_id", getId())
-                .put("uri", getUri().replace(WikidataEntityMap.WD_ENTITY_BASE_URI, ""))
-                .put("osm_relation_id", getOSMRelationId())
-                .put("nuts_code", getNUTSCode());
+                .put("uri", getUri()) // .replace(WikidataEntityMap.WD_ENTITY_BASE_URI, "")
+                .put("iso_code", getISOCode())
+                .put("nuts_code", getNUTSCode())
+                .put("osm_relation_id", getOSMRelationId());
         } catch (JSONException ex) {
             throw new RuntimeException(ex);
         }

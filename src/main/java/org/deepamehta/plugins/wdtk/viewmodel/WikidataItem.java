@@ -1,8 +1,10 @@
 package org.deepamehta.plugins.wdtk.viewmodel;
 
 import de.deepamehta.core.DeepaMehtaObject;
+import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.Topic;
+import de.deepamehta.core.RelatedTopic;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.deepamehta.plugins.wdtk.WikidataEntityMap;
@@ -10,18 +12,28 @@ import org.deepamehta.plugins.wdtk.WikidataEntityMap;
 import java.util.logging.Logger;
 
 /**
+ * A slim data transfer object for a wikidata item topic with just a default label and WGS 84 coordinates.
  *
- * @author malte
+ * <a href="https://github.com/mukil/dm4-wikidata-toolkit">Source Code Repository</a>
+ *
+ * @author Malte Reißig (<malte@mikromedia.de>)
+ * @version 0.3-SNAPSHOT
  */
 public class WikidataItem implements JSONEnabled {
     
     DeepaMehtaObject item;
     Topic geoCoordinate;
     
-    static final Logger log = Logger.getLogger(CountryItem.class.getName());
-    
+    static final Logger log = Logger.getLogger(WikidataItem.class.getName());
+
     public WikidataItem (DeepaMehtaObject topic) {
         this.item = topic;
+    }
+
+    public WikidataItem (Topic textTopic, DeepaMehtaService dms) {
+        RelatedTopic relatedTopic = textTopic.getRelatedTopic(null, "dm4.core.child", "dm4.core.parent",
+                "org.deepamehta.wikidata.item");
+        this.item = dms.getTopic(relatedTopic.getId());
     }
     
     public boolean hasGeoCoordinateObject () {
@@ -52,7 +64,7 @@ public class WikidataItem implements JSONEnabled {
             JSONObject coordinates = getGeoCoordinateObject();
             return new JSONObject()
                 .put("default_name", item.getSimpleValue().toString())
-                .put("uri", item.getUri().replace(WikidataEntityMap.WD_ENTITY_BASE_URI, ""))
+                .put("uri", item.getUri()) // .replace(WikidataEntityMap.WD_ENTITY_BASE_URI, "")
                 .put("topic_id", item.getId())
                 .put("coordinate", coordinates);
         } catch (JSONException ex) {

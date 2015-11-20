@@ -16,8 +16,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * A data transfer object for a wikidata item topic with a default label, ISO Three Letter Code, an OSM Relation ID
+ * and a list of child items claiming this item as their "Country". The countries childs are serialized as a list of
+ * elements of type <code>WikidataItem</code>.
  *
- * @author mukil
+ * <a href="https://github.com/mukil/dm4-wikidata-toolkit">Source Code Repository</a>
+ *
+ * @author Malte Reißig (<malte@mikromedia.de>)
+ * @version 0.3-SNAPSHOT
  */
 public class CountryItem implements JSONEnabled {
     
@@ -118,8 +124,8 @@ public class CountryItem implements JSONEnabled {
             }
             return new JSONObject()
                 .put("default_name", item.getSimpleValue())
-                .put("uri", item.getUri().replace(WikidataEntityMap.WD_ENTITY_BASE_URI, ""))
                 .put("topic_id", item.getId())
+                .put("uri", item.getUri()) // .replace(WikidataEntityMap.WD_ENTITY_BASE_URI, "")
                 .put("iso_code", getIsoCountryCode())
                 .put("osm_relation_id", getOSMRelationId())
                 // .put("regions", regions)

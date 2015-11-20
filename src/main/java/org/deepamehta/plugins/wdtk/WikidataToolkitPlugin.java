@@ -17,6 +17,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 
 import org.deepamehta.plugins.wdtk.viewmodel.CountryItem;
+import org.deepamehta.plugins.wdtk.viewmodel.WikidataItem;
 import org.deepamehta.plugins.wdtk.viewmodel.RegionItem;
 import org.wikidata.wdtk.dumpfiles.DumpProcessingController;
 
@@ -37,11 +38,12 @@ import de.deepamehta.plugins.workspaces.WorkspacesService;
 
 
 /**
- * A very basic plugin to use the wikidata toolkit as DeepaMehta 4 plugin.
+ * A plugin to use the WikidataToolkit by Markus Krötzsch et al as DeepaMehta 4 plugin.
+ *
+ * <a href="https://github.com/mukil/dm4-wikidata-toolkit">Source Code Repository</a>
  *
  * @author Malte Reißig (<malte@mikromedia.de>)
- * @website https://github.com/mukil/dm4-wikidata-toolkit
- * @version 0.2
+ * @version 0.3-SNAPSHOT
  */
 
 @Path("/wdtk")
@@ -154,6 +156,22 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     }
 
     // --- Specific "Listing" Endpoints
+
+    @GET
+    @Path("/search/{query}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ArrayList<WikidataItem> getWikidataItemsByValue(@PathParam("query") String value) {
+        //
+        ArrayList<WikidataItem> results = new ArrayList<WikidataItem>();
+        log.info("Searching wikidata text topics with " + value);
+        List<Topic> all = dms.searchTopics(value, "org.deepamehta.wikidata.text");
+        for (Topic textValue : all) {
+            WikidataItem item = new WikidataItem(textValue, dms);
+            results.add(item);
+        }
+        log.info("Fetched " + results.size() + " wikidata items");
+        return results;
+    }
 
     @GET
     @Path("/list/countries")
