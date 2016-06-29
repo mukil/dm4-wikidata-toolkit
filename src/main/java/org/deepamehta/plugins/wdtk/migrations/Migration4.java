@@ -19,8 +19,8 @@ public class Migration4 extends Migration {
     @Override
     public void run() {
 
-        dms.getTopicType("dm4.geomaps.latitude").addIndexMode(IndexMode.KEY);
-        dms.getTopicType("dm4.geomaps.longitude").addIndexMode(IndexMode.KEY);
+        dm4.getTopicType("dm4.geomaps.latitude").addIndexMode(IndexMode.KEY);
+        dm4.getTopicType("dm4.geomaps.longitude").addIndexMode(IndexMode.KEY);
 
     }
 

@@ -1,18 +1,16 @@
 package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.Association;
-import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.AssociationModel;
 import de.deepamehta.core.model.ChildTopicsModel;
 import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
-import de.deepamehta.core.model.TopicRoleModel;
-import de.deepamehta.core.service.DeepaMehtaService;
-import de.deepamehta.core.service.ResultList;
+import de.deepamehta.core.service.CoreService;
+import de.deepamehta.core.service.ModelFactory;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.workspaces.WorkspacesService;
+import de.deepamehta.workspaces.WorkspacesService;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.wikidata.wdtk.datamodel.interfaces.EntityDocumentProcessor;
@@ -52,9 +50,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private final String DM_COUNTRY             = "dm4.contacts.country";
     private final String DM_WEBBROWSER_URL      = "dm4.webbrowser.url";
     private final String DM_CONTACT_NOTE        = "dm4.contacts.notes";
-    private final String DM_NOTE_TITLE          = "dm4.notes.title";
-    private final String DM_NOTE_DESCR          = "dm4.notes.text";
-    private final String DM_NOTE                = "dm4.notes.note";
+    // private final String DM_NOTE_TITLE          = "dm4.notes.title";
+    // private final String DM_NOTE_DESCR          = "dm4.notes.text";
+    // private final String DM_NOTE                = "dm4.notes.note";
 
     private final String WS_WIKIDATA_URI = "org.deepamehta.workspaces.wikidata";
 
@@ -77,15 +75,16 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     // setting: language default value
     String isoLanguageCode = WikidataEntityMap.LANG_EN;
 
-    DeepaMehtaService dms;
+    CoreService dm4;
+    ModelFactory mf;
     WorkspacesService workspaceService;
     Topic wikidataWorkspace = null;
 
-    public WikidataEntityProcessor (DeepaMehtaService dms, WorkspacesService workspaceService, int timeout,
+    public WikidataEntityProcessor (CoreService dm4, ModelFactory mf, WorkspacesService workspaceService, int timeout,
         boolean persons, boolean institutions, boolean cities, boolean countries, boolean descriptions, 
         boolean urls, boolean coordinates, String iso_lang) {
         this.timeout = timeout;
-        this.dms = dms;
+        this.dm4 = dm4;
         this.workspaceService = workspaceService;
         this.doCountries = countries;
         this.doCities = cities;
@@ -429,11 +428,11 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     }
     
     private Topic getWikidataItemByEntityId (EntityIdValue id) {
-        return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id.getId()));
+        return dm4.getTopicByUri(WikidataEntityMap.WD_ENTITY_BASE_URI + id.getId());
     }
 
     private Topic getWikidataItemByEntityId (String id) {
-        return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id));
+        return dm4.getTopicByUri(WikidataEntityMap.WD_ENTITY_BASE_URI + id);
     }
 
     /** private String getItemLabelByEntityId (EntityIdValue id) {
@@ -495,9 +494,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private Topic createPersonTopic(String firstName, String lastName, String itemId) {
         Topic person = null;
         if (!alreadyExists(itemId)) {
-            DeepaMehtaTransaction tx = dms.beginTx();
+            DeepaMehtaTransaction tx = dm4.beginTx();
             try {
-                ChildTopicsModel personComposite = new ChildTopicsModel().put(DM_PERSON_NAME, new ChildTopicsModel()
+                ChildTopicsModel personComposite = mf.newChildTopicsModel().put(DM_PERSON_NAME, mf.newChildTopicsModel()
                     .put(DM_PERSON_FIRST_NAME, firstName).put(DM_PERSON_LAST_NAME, lastName)
                 );
                 // add "official website" to person if available
@@ -507,9 +506,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 description = (description != null) ? "<p>"+description+"</p>" : "";
                 addWikidataItemDescription(itemId, description, personComposite);
                 // build up model
-                TopicModel personModel = new TopicModel(
+                TopicModel personModel = mf.newTopicModel(
                     WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_PERSON, personComposite);
-                person = dms.createTopic(personModel);
+                person = dm4.createTopic(personModel);
                 workspaceService.assignToWorkspace(person, wikidataWorkspace.getId());
                 tx.success();
             } catch (Exception e) {
@@ -525,9 +524,9 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private Topic createInstitutionTopic(String name, String itemId) {
         Topic institution = null;
         if (!alreadyExists(itemId)) {
-            DeepaMehtaTransaction tx = dms.beginTx();
+            DeepaMehtaTransaction tx = dm4.beginTx();
             try {
-                ChildTopicsModel institutionComposite = new ChildTopicsModel();
+                ChildTopicsModel institutionComposite = mf.newChildTopicsModel();
                 institutionComposite.put(DM_INSTITUTION_NAME, name);
                 // add "official website" to institution if available
                 addWebbrowserURLAsChildTopic(institutionComposite, itemId);
@@ -536,10 +535,10 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 description = (description != null) ? "<p>"+description+"</p>" : "";
                 addWikidataItemDescription(itemId, description, institutionComposite);
                 // build up model
-                TopicModel institutionModel = new TopicModel(
+                TopicModel institutionModel = mf.newTopicModel(
                     WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_INSTITUTION, institutionComposite);
                 // ### set GeoCoordinate Facet via values in all_coordinates
-                institution = dms.createTopic(institutionModel);
+                institution = dm4.createTopic(institutionModel);
                 workspaceService.assignToWorkspace(institution, wikidataWorkspace.getId());
                 tx.success();
             } catch (Exception e) {
@@ -555,19 +554,19 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private void addWebbrowserURLAsChildTopic(ChildTopicsModel composite, String itemId) {
         if (all_websites.containsKey(itemId)) {
             composite.add(DM_WEBBROWSER_URL,
-                new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
+                mf.newTopicModel(DM_WEBBROWSER_URL, new SimpleValue(all_websites.get(itemId))));
         }
     }
 
     private Topic createCityTopic(String name, String itemId) {
         Topic city = null;
         if (!alreadyExists(itemId)) {
-            DeepaMehtaTransaction tx = dms.beginTx();
+            DeepaMehtaTransaction tx = dm4.beginTx();
             try {
-                TopicModel cityModel = new TopicModel(
+                TopicModel cityModel = mf.newTopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_CITY, new SimpleValue(name));
                 // ### set GeoCoordinate Facet via values in all_coordinates
-                city = dms.createTopic(cityModel);
+                city = dm4.createTopic(cityModel);
                 workspaceService.assignToWorkspace(city, wikidataWorkspace.getId());
                 tx.success();
             } catch (Exception re) {
@@ -583,12 +582,12 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     private Topic createCountryTopic(String name, String itemId) {
         Topic country = null;
         if (!alreadyExists(itemId)) {
-            DeepaMehtaTransaction tx = dms.beginTx();
+            DeepaMehtaTransaction tx = dm4.beginTx();
             try {
-                TopicModel countryModel = new TopicModel(
+                TopicModel countryModel = mf.newTopicModel(
                 WikidataEntityMap.WD_ENTITY_BASE_URI + itemId, DM_COUNTRY, new SimpleValue(name));
                 // ### set GeoCoordinate Facet via values in all_coordinates
-                country = dms.createTopic(countryModel);
+                country = dm4.createTopic(countryModel);
                 workspaceService.assignToWorkspace(country, wikidataWorkspace.getId());
                 tx.success();
             } catch (Exception re) {
@@ -611,14 +610,14 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     }
     
     private void createRelatedURLTopic(Topic topic, String url) {
-        DeepaMehtaTransaction tx = dms.beginTx();
+        DeepaMehtaTransaction tx = dm4.beginTx();
         try {
-            TopicModel urlmodel = new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(url));
-            Topic website = dms.createTopic(urlmodel);
+            TopicModel urlmodel = mf.newTopicModel(DM_WEBBROWSER_URL, new SimpleValue(url));
+            Topic website = dm4.createTopic(urlmodel);
             if (website != null && topic != null) {
-                dms.createAssociation(new AssociationModel("dm4.core.association",
-                    new TopicRoleModel(topic.getId(), "dm4.core.parent"),
-                    new TopicRoleModel(website.getId(), "dm4.core.child")));
+                dm4.createAssociation(mf.newAssociationModel("dm4.core.association",
+                    mf.newTopicRoleModel(topic.getId(), "dm4.core.parent"),
+                    mf.newTopicRoleModel(website.getId(), "dm4.core.child")));
                 workspaceService.assignToWorkspace(website, wikidataWorkspace.getId());
             }
             tx.success();
@@ -643,27 +642,27 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                 String statementGUID = statementValueCode.split(WikidataEntityMap.URI_SEPERATOR)[0];
                 String propertyEntityId = statementValueCode.split(WikidataEntityMap.URI_SEPERATOR)[1];
                 if (relatedEntityId.startsWith("T")) {
-                    toPlayer = dms.getTopic(Long.parseLong(relatedEntityId.substring(1)));
-                    fromPlayer = dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId));
+                    toPlayer = dm4.getTopic(Long.parseLong(relatedEntityId.substring(1)));
+                    fromPlayer = dm4.getTopicByUri(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId);
                 }
                 if (fromPlayer != null && toPlayer != null &&
                     !associationAlreadyExists(fromPlayer.getId(), toPlayer.getId(), relationType)) {
                     Topic propertyEntity = getWikidataItemByEntityId(propertyEntityId);
                     ChildTopicsModel assocModel = null;
                     if (propertyEntity == null) { // do create new property entity topic
-                        assocModel = new ChildTopicsModel()
-                            .add("org.deepamehta.wikidata.property", new TopicModel(
+                        assocModel = mf.newChildTopicsModel()
+                            .add("org.deepamehta.wikidata.property", mf.newTopicModel(
                                     WikidataEntityMap.WD_ENTITY_BASE_URI + propertyEntityId,
                                     "org.deepamehta.wikidata.property"));
                     } else {
-                        assocModel = new ChildTopicsModel()
+                        assocModel = mf.newChildTopicsModel()
                             .addRef("org.deepamehta.wikidata.property", propertyEntity.getId());
                     }
-                    DeepaMehtaTransaction tx = dms.beginTx();
+                    DeepaMehtaTransaction tx = dm4.beginTx();
                     try {
-                        relation = dms.createAssociation(new AssociationModel(relationType,
-                                new TopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
-                                new TopicRoleModel(toPlayer.getId(), "dm4.core.child"), assocModel));
+                        relation = dm4.createAssociation(mf.newAssociationModel(relationType,
+                                mf.newTopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
+                                mf.newTopicRoleModel(toPlayer.getId(), "dm4.core.child"), assocModel));
                         relation.setUri(statementGUID);
                         if (relation != null) {
                             log.info("Created new \""+relationType+"\" relationship for " + itemId +
@@ -686,13 +685,13 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
     
     private boolean alreadyExists (String wikidataItemId) {
         String uri = WikidataEntityMap.WD_ENTITY_BASE_URI + wikidataItemId;
-        Topic entity = dms.getTopic("uri", new SimpleValue(uri));
+        Topic entity = dm4.getTopicByUri(uri);
         if (entity == null) return false;
         return true;
     }
 
     private boolean associationAlreadyExists (long playerOne, long playerTwo, String assocTypeUri) {
-        Association assoc = dms.getAssociation(assocTypeUri, playerOne, playerTwo, "dm4.core.default", "dm4.core.default");
+        Association assoc = dm4.getAssociation(assocTypeUri, playerOne, playerTwo, "dm4.core.default", "dm4.core.default");
         if (assoc == null) return false;
         return true;
     }
@@ -807,10 +806,10 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
             createItemRelations(mentorOf, "mentor of", "org.deepamehta.wikidata.mentor_of");
         }
 
-        ResultList<RelatedTopic> personas = dms.getTopics("dm4.contacts.person", 0);
-        ResultList<RelatedTopic> institutions = dms.getTopics("dm4.contacts.institution", 0);
-        ResultList<RelatedTopic> cities = dms.getTopics("dm4.contacts.city", 0);
-        ResultList<RelatedTopic> countries = dms.getTopics("dm4.contacts.country", 0);
+        List<Topic> personas = dm4.getTopicsByType("dm4.contacts.person");
+        List<Topic> institutions = dm4.getTopicsByType("dm4.contacts.institution");
+        List<Topic> cities = dm4.getTopicsByType("dm4.contacts.city");
+        List<Topic> countries = dm4.getTopicsByType("dm4.contacts.country");
         int numberOfAssocs = employeeOf.size() + citizenOf.size() + affiliatedWith.size() + studentOf.size() + mentorOf.size();
         if (personas != null && institutions != null && cities != null && countries != null) {
             log.info("DeepaMehta now recognizes " + this.all_persons.size() + " human beings"

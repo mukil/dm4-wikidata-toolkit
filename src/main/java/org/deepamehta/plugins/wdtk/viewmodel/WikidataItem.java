@@ -1,13 +1,12 @@
 package org.deepamehta.plugins.wdtk.viewmodel;
 
 import de.deepamehta.core.DeepaMehtaObject;
-import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.RelatedTopic;
+import de.deepamehta.core.service.CoreService;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.deepamehta.plugins.wdtk.WikidataEntityMap;
 
 import java.util.logging.Logger;
 
@@ -30,21 +29,19 @@ public class WikidataItem implements JSONEnabled {
         this.item = topic;
     }
 
-    public WikidataItem (Topic textTopic, DeepaMehtaService dms) {
+    public WikidataItem (Topic textTopic, CoreService dms) {
         RelatedTopic relatedTopic = textTopic.getRelatedTopic(null, "dm4.core.child", "dm4.core.parent",
                 "org.deepamehta.wikidata.item");
         this.item = dms.getTopic(relatedTopic.getId());
     }
     
     public boolean hasGeoCoordinateObject () {
-        item.loadChildTopics("dm4.geomaps.geo_coordinate");
-        return item.getChildTopics().has("dm4.geomaps.geo_coordinate");
+        return (item.getChildTopics().getTopicOrNull("dm4.geomaps.geo_coordinate") != null);
     }
     
     public JSONObject getGeoCoordinateObject() throws JSONException {
         // 
-        item.loadChildTopics();
-        if (item.getChildTopics().has("dm4.geomaps.geo_coordinate")) {
+        if (hasGeoCoordinateObject()) {
             // 
             double lat = 0;
             double lng = 0;

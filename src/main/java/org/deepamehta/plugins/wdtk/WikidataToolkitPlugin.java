@@ -27,13 +27,11 @@ import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.RelatedAssociation;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
-import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
-import de.deepamehta.plugins.accesscontrol.AccessControlService;
-import de.deepamehta.plugins.workspaces.WorkspacesService;
+import de.deepamehta.accesscontrol.AccessControlService;
+import de.deepamehta.workspaces.WorkspacesService;
 
 
 
@@ -94,7 +92,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         //
         checkAuthorization();
         //
-        Topic settings = dms.getTopic(settingsTopicId);
+        Topic settings = dm4.getTopic(settingsTopicId);
         importWikidataEntities(settings);
         return settings;
     }
@@ -108,7 +106,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         //
         checkAuthorization();
         //
-        Topic importerSettings = dms.getTopic(settingsTopicId);
+        Topic importerSettings = dm4.getTopic(settingsTopicId);
         ChildTopics settings = importerSettings.getChildTopics();
         boolean persons = settings.getBoolean(WD_IMPORT_PERSONS);
         boolean institutions = settings.getBoolean(WD_IMPORT_INSTITUTIONS);
@@ -117,34 +115,34 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         try {
             log.info("Start to remove all wikidata topics ... ");
             if (persons) { // Delete all "Person" Topics
-                for (RelatedTopic person : dms.getTopics("dm4.contacts.person", 0)){
+                for (Topic person : dm4.getTopicsByType("dm4.contacts.person")){
                     if (person.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
                         log.info("Persons ... ");
-                        dms.deleteTopic(person.getId());
+                        dm4.deleteTopic(person.getId());
                     }
                 }
             }
             if (institutions) { // Delete all "Institution"-Topics
-                for (RelatedTopic institution : dms.getTopics("dm4.contacts.institution", 0)){
+                for (Topic institution : dm4.getTopicsByType("dm4.contacts.institution")){
                     if (institution.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
                         log.info("Institutions ... ");
-                        dms.deleteTopic(institution.getId());
+                        dm4.deleteTopic(institution.getId());
                     }
                 }
             }
             if (cities) { // Delete all "City"-Topics
-                for (RelatedTopic city : dms.getTopics("dm4.contacts.city", 0)){
+                for (Topic city : dm4.getTopicsByType("dm4.contacts.city")){
                     if (city.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
                         log.info("Cities ... ");
-                        dms.deleteTopic(city.getId());
+                        dm4.deleteTopic(city.getId());
                     }
                 }
             }
             if (countries) { // Delete all "Country"-Topics
-                for (RelatedTopic country : dms.getTopics("dm4.contacts.country", 0)){
+                for (Topic country : dm4.getTopicsByType("dm4.contacts.country")){
                     if (country.getUri().startsWith(WikidataEntityMap.WD_ENTITY_BASE_URI)) {
                         log.info("Countries ... ");
-                        dms.deleteTopic(country.getId());
+                        dm4.deleteTopic(country.getId());
                     }
                 }
             }
@@ -155,6 +153,24 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         return importerSettings;
     }
 
+    // --- TODO: Create a search GUI
+    // --- TODO: Integrate a connector tor the OSM API
+    // https://wiki.openstreetmap.org/wiki/API_v0.6
+    // e.g. see a XML document returned for the OSM Relation describing "Japan"
+    // http://api.openstreetmap.org/api/0.6/relation/382313/full
+    // see also http://dev.openlayers.org/apidocs/files/OpenLayers/Format/OSM-js.html
+    /**
+     * <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-osm/v0.1.0/leaflet-osm.js'></script>
+     * $.ajax({
+        url: "https://www.openstreetmap.org/api/0.6/way/260501602/full",
+        dataType: "xml",
+        success: function (xml) {
+            var layer = new L.OSM.DataLayer(xml).addTo(map);
+            map.fitBounds(layer.getBounds());
+        }
+     });
+     */
+
     // --- Specific "Listing" Endpoints
 
     @GET
@@ -164,9 +180,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         //
         ArrayList<WikidataItem> results = new ArrayList<WikidataItem>();
         log.info("Searching wikidata text topics with " + value);
-        List<Topic> all = dms.searchTopics(value, "org.deepamehta.wikidata.text");
+        List<Topic> all = dm4.searchTopics(value, "org.deepamehta.wikidata.text");
         for (Topic textValue : all) {
-            WikidataItem item = new WikidataItem(textValue, dms);
+            WikidataItem item = new WikidataItem(textValue, dm4);
             results.add(item);
         }
         log.info("Fetched " + results.size() + " wikidata items");
@@ -179,9 +195,9 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     public ArrayList<CountryItem> getAllCountryItems() {
         //
         ArrayList<CountryItem> results = new ArrayList<CountryItem>();
-        ResultList<RelatedTopic> all = dms.getTopics("org.deepamehta.wikidata.text", 0);
-        log.info("Requested all countries (identified via iso-code), fetched " + all.getSize());
-        for (RelatedTopic textValue : all) {
+        List<Topic> all = dm4.getTopicsByType("org.deepamehta.wikidata.text");
+        log.info("Requested all countries (identified via iso-code), fetched " + all.size());
+        for (Topic textValue : all) {
             CountryItem item = new CountryItem(textValue);
             if (item.isCountry()) results.add(item);
         }
@@ -195,17 +211,17 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     public ArrayList<Topic> getAllItemsWithIsoCodes() {
         log.info("Requested all wikidata items with an \"ISO Three Letter Code\"");
         ArrayList<Topic> results = new ArrayList<Topic>();
-        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        List<Topic> textValues = dm4.getTopicsByType("org.deepamehta.wikidata.text");
         // all results
-        for (RelatedTopic textValue : textValues) {
+        for (Topic textValue : textValues) {
             List<Association> assocs = textValue.getAssociations();
             for (Association assoc : assocs) {
                 if (assoc.getTypeUri().equals("org.deepamehta.wikidata.iso_country_code")) {
                     // OK, lets' add the parent wikidata item of this iso code to our resultset
                     if (assoc.getPlayer1().getId() == textValue.getId()) {
-                        results.add(dms.getTopic(assoc.getPlayer2().getId()));
+                        results.add(dm4.getTopic(assoc.getPlayer2().getId()));
                     } else {
-                        results.add(dms.getTopic(assoc.getPlayer1().getId()));
+                        results.add(dm4.getTopic(assoc.getPlayer1().getId()));
                     }
                 }
             }
@@ -220,17 +236,17 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     public ArrayList<Topic> getAllItemsWithOSMRelations() {
         log.info("Requested all wikidata items with an \"OSM Relation ID\"");
         ArrayList<Topic> results = new ArrayList<Topic>();
-        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        List<Topic> textValues = dm4.getTopicsByType("org.deepamehta.wikidata.text");
         // all results
-        for (RelatedTopic textValue : textValues) {
+        for (Topic textValue : textValues) {
             List<Association> assocs = textValue.getAssociations();
             for (Association assoc : assocs) {
                 if (assoc.getTypeUri().equals("org.deepamehta.wikidata.osm_relation_id")) {
                     // OK, lets' add the parent wikidata item of this iso code to our resultset
                     if (assoc.getPlayer1().getId() == textValue.getId()) {
-                        results.add(dms.getTopic(assoc.getPlayer2().getId()));
+                        results.add(dm4.getTopic(assoc.getPlayer2().getId()));
                     } else {
-                        results.add(dms.getTopic(assoc.getPlayer1().getId()));
+                        results.add(dm4.getTopic(assoc.getPlayer1().getId()));
                     }
                 }
             }
@@ -245,17 +261,17 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     public ArrayList<RegionItem> getAllItemsWithNutsCodes() {
         log.info("Requested all wikidata items with a \"NUTS Code\"");
         ArrayList<RegionItem> results = new ArrayList<RegionItem>();
-        ResultList<RelatedTopic> textValues = dms.getTopics("org.deepamehta.wikidata.text", 0);
+        List<Topic> textValues = dm4.getTopicsByType("org.deepamehta.wikidata.text");
         // all results
-        for (RelatedTopic textValue : textValues) {
+        for (Topic textValue : textValues) {
             List<Association> assocs = textValue.getAssociations();
             for (Association assoc : assocs) {
                 if (assoc.getTypeUri().equals("org.deepamehta.wikidata.nuts_code")) {
                     // OK, lets' add the parent wikidata item of this iso code to our resultset
                     if (assoc.getPlayer1().getId() == textValue.getId()) {
-                        results.add(new RegionItem(dms.getTopic(assoc.getPlayer2().getId())));
+                        results.add(new RegionItem(dm4.getTopic(assoc.getPlayer2().getId())));
                     } else {
-                        results.add(new RegionItem(dms.getTopic(assoc.getPlayer1().getId())));
+                        results.add(new RegionItem(dm4.getTopic(assoc.getPlayer1().getId())));
                     }
                 }
             }
@@ -279,20 +295,20 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @Path("/list/{propertyId}/{itemId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
-    public ResultList<RelatedTopic> getRelatedTopics(@PathParam("propertyId") String propertyId,
+    public List<RelatedTopic> getRelatedTopics(@PathParam("propertyId") String propertyId,
             @PathParam("itemId") String itemId) {
         Topic item = getWikidataItemByEntityId(itemId);
         Topic propertyTopic = getWikidataItemByEntityId(propertyId.trim());
         if (propertyTopic != null) {
             log.fine("### Query Related Topics for Property \"" + propertyTopic.getUri() + "\"");
-            ResultList<RelatedTopic> associatedAssocTypes = propertyTopic.getRelatedTopics("dm4.core.aggregation", "dm4.core.child",
-                    "dm4.core.parent", "dm4.core.assoc_type", 0);
-            if (associatedAssocTypes.getSize() == 1) {
-                AssociationType propertyType = dms.getAssociationType(associatedAssocTypes.get(0).getUri());
+            List<RelatedTopic> associatedAssocTypes = propertyTopic.getRelatedTopics("dm4.core.aggregation", "dm4.core.child",
+                    "dm4.core.parent", "dm4.core.assoc_type");
+            if (associatedAssocTypes.size() == 1) {
+                AssociationType propertyType = dm4.getAssociationType(associatedAssocTypes.get(0).getUri());
                 if (item != null) {
-                    ResultList<RelatedTopic> results = item.getRelatedTopics(propertyType.getUri(), 0);
+                    List<RelatedTopic> results = item.getRelatedTopics(propertyType.getUri());
                     String resultShowCaseInfo = "Nothing we know of.";
-                    if (results.getSize() >= 1) {
+                    if (results.size() >= 1) {
                         Topic firstItem = results.get(0);
                         resultShowCaseInfo = firstItem.getSimpleValue() + " ("+firstItem.getUri() + ") .. at least.";
                     }
@@ -304,7 +320,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
                 }
             } else {
                 log.severe("### Query: could not fetch ONE assocType for given " + propertyId + " BUT => "
-                    + associatedAssocTypes.getSize() + " - SKIPPING QUERY due to misconfiguration");
+                    + associatedAssocTypes.size() + " - SKIPPING QUERY due to misconfiguration");
             }
         } else {
             log.severe("### Query: Property with ID: " + propertyId + " NOT FOUND in DB!");
@@ -322,7 +338,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     @Path("/list/claims/{propertyId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Override
-    public ResultList<RelatedAssociation> getRelatedAssociations(@PathParam("propertyId") String propertyId) {
+    public List<RelatedAssociation> getRelatedAssociations(@PathParam("propertyId") String propertyId) {
         Topic propertyTopic = getWikidataItemByEntityId(propertyId.trim());
         if (propertyTopic != null) {
             log.info("### Query Wikidata Claims by property \"" + propertyTopic.getUri() + "\"");
@@ -348,8 +364,8 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
             @PathParam("itemId") String itemId) {
         Topic item = getWikidataItemByEntityId(itemId.trim());
         ArrayList<RelatedAssociation> collection = new ArrayList<RelatedAssociation>();
-        ResultList<RelatedAssociation> claims = getRelatedAssociations(propertyId);
-        for (RelatedAssociation claim : claims.getItems()) {
+        List<RelatedAssociation> claims = getRelatedAssociations(propertyId);
+        for (RelatedAssociation claim : claims) {
             if (claim.getPlayer1().getId() == item.getId() ||
                 claim.getPlayer2().getId() == item.getId()) collection.add(claim);
         }
@@ -371,23 +387,23 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
     public ArrayList<RelatedTopic> getSuperRelatedTopics(@PathParam("propertyId") String propertyId,
             @PathParam("itemId") String itemId, @PathParam("propertyTwoId") String propertyTwoId,
             @PathParam("itemTwoId") String itemTwoId) {
-        ResultList<RelatedTopic> firstHopResults = getRelatedTopics(propertyId, itemId);
+        List<RelatedTopic> firstHopResults = getRelatedTopics(propertyId, itemId);
         ArrayList<RelatedTopic> collection = new ArrayList<RelatedTopic>();
-        if (firstHopResults.getSize() > 0) {
+        if (firstHopResults.size() > 0) {
             Topic propertyTwoTopic = getWikidataItemByEntityId(propertyTwoId.trim());
-            for (RelatedTopic result : firstHopResults.getItems()) {
+            for (RelatedTopic result : firstHopResults) {
                 if (propertyTwoTopic != null) {
                     log.fine("### Query Super Related Topic for Property \"" + propertyTwoTopic.getSimpleValue()+ "\"");
-                    ResultList<RelatedTopic> associatedAssocTypes = propertyTwoTopic.getRelatedTopics("dm4.core.aggregation", "dm4.core.child",
-                            "dm4.core.parent", "dm4.core.assoc_type", 0);
-                    if (associatedAssocTypes.getSize() == 1) {
-                        AssociationType propertyTypeTwo = dms.getAssociationType(associatedAssocTypes.get(0).getUri());
+                    List<RelatedTopic> associatedAssocTypes = propertyTwoTopic.getRelatedTopics("dm4.core.aggregation", "dm4.core.child",
+                            "dm4.core.parent", "dm4.core.assoc_type");
+                    if (associatedAssocTypes.size() == 1) {
+                        AssociationType propertyTypeTwo = dm4.getAssociationType(associatedAssocTypes.get(0).getUri());
                         if (itemTwoId != null && !itemTwoId.equals("NOQ")) {
                             log.info("### Query: What is super related to " + "\"" + itemTwoId+ "\" via \""
                                     + propertyTypeTwo.getSimpleValue() + "\" >>> ");
-                            ResultList<RelatedTopic> results = result.getRelatedTopics(propertyTypeTwo.getUri(), 0);
-                            if (results.getSize() >= 1) {
-                                for (RelatedTopic end : results.getItems()) {
+                            List<RelatedTopic> results = result.getRelatedTopics(propertyTypeTwo.getUri());
+                            if (results.size() >= 1) {
+                                for (RelatedTopic end : results) {
                                     if (end.getUri().equals(WikidataEntityMap.WD_ENTITY_BASE_URI + itemTwoId)) {
                                         collection.add(result);
                                         log.info(" .... at least " + end.getSimpleValue() + " ("+end.getUri() + ") .. at least.");
@@ -396,18 +412,16 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
                                 return collection;
                             }
                         } else {
-                            log.severe("### Query: Super Related Topic "+result.getSimpleValue()+" had NO ItemId via \"" + propertyTypeTwo.getSimpleValue() + "\"");
-                            ResultList<RelatedTopic> results = result.getRelatedTopics(propertyTypeTwo.getUri(), 0);
-                            log.info("  > " + results.toJSON().toString());
+                            log.warning("### Query: Super Related Topic "+result.getSimpleValue()+" had NO ItemId via \"" + propertyTypeTwo.getSimpleValue() + "\"");
+                            // List<RelatedTopic> results = result.getRelatedTopics(propertyTypeTwo.getUri());
                         }
                     } else {
-                        log.severe("### Query: could not fetch ONE assocType for given " + propertyId + " BUT => "
-                            + associatedAssocTypes.getSize() + " - SKIPPING QUERY due to misconfiguration");
+                        log.warning("### Query: could not fetch ONE assocType for given " + propertyId + " BUT => "
+                            + associatedAssocTypes.size() + " - SKIPPING QUERY due to misconfiguration");
                     }
                 } else {
-                    log.severe("### Query: Property with ID: " + propertyId + " NOT FOUND in DB!");
+                    log.warning("### Query: Property with ID: " + propertyId + " NOT FOUND in DB!");
                 }
-
             }
         }
         return null;
@@ -425,7 +439,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
 
     // ### remove copy in WikidataEntityProcessor
     private Topic getWikidataItemByEntityId (String id) {
-        return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id));
+        return dm4.getTopicByUri(WikidataEntityMap.WD_ENTITY_BASE_URI + id);
     }
 
     private void importWikidataEntities(Topic importerSettings) {
@@ -441,7 +455,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean descriptions = childs.getBoolean(WD_IMPORT_DESCRIPTIONS);
         boolean websites = childs.getBoolean(WD_IMPORT_WEBSITES);
         boolean geoCoordinates = childs.getBoolean(WD_IMPORT_COORDINATES);
-        WikidataGeodataProcessor wikidataEntityProcessor = new WikidataGeodataProcessor(dms, wsService, timeOut,
+        WikidataGeodataProcessor wikidataEntityProcessor = new WikidataGeodataProcessor(dm4, mf, wsService, timeOut,
                 persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode);
         WikidataToolkitPlugin.this.startProcessingWikidataDumpfile(wikidataEntityProcessor, noDownload);
         wikidataEntityProcessor = null;

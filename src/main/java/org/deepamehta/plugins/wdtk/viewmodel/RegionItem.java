@@ -3,13 +3,9 @@ package org.deepamehta.plugins.wdtk.viewmodel;
 import de.deepamehta.core.DeepaMehtaObject;
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.RelatedTopic;
-import de.deepamehta.core.service.ResultList;
+import java.util.List;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.deepamehta.plugins.wdtk.WikidataEntityMap;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A data transfer object for a wikidata item topic with a default label and additionally carrying
@@ -42,23 +38,23 @@ public class RegionItem implements JSONEnabled {
     
     public String getOSMRelationId() {
         if (item == null) return UNKNOWN_ID;
-        ResultList<RelatedTopic> osmRelationIdValues = item.getRelatedTopics("org.deepamehta.wikidata.osm_relation_id", "dm4.core.parent", 
-            "dm4.core.child", "org.deepamehta.wikidata.text", 1);
-        return (osmRelationIdValues.getSize() >= 1) ? osmRelationIdValues.get(0).getSimpleValue().toString() : UNKNOWN_ID;
+        List<RelatedTopic> osmRelationIdValues = item.getRelatedTopics("org.deepamehta.wikidata.osm_relation_id", "dm4.core.parent",
+            "dm4.core.child", "org.deepamehta.wikidata.text");
+        return (osmRelationIdValues.size() >= 1) ? osmRelationIdValues.get(0).getSimpleValue().toString() : UNKNOWN_ID;
     }
     
     public String getNUTSCode() {
         if (item == null) return UNKNOWN_ID;
-        ResultList<RelatedTopic> nutsCodeValue = item.getRelatedTopics("org.deepamehta.wikidata.nuts_code", "dm4.core.parent", 
-            "dm4.core.child", "org.deepamehta.wikidata.text", 1);
-        return (nutsCodeValue.getSize() >= 1) ? nutsCodeValue.get(0).getSimpleValue().toString() : UNKNOWN_ID;
+        List<RelatedTopic> nutsCodeValue = item.getRelatedTopics("org.deepamehta.wikidata.nuts_code", "dm4.core.parent",
+            "dm4.core.child", "org.deepamehta.wikidata.text");
+        return (nutsCodeValue.size() >= 1) ? nutsCodeValue.get(0).getSimpleValue().toString() : UNKNOWN_ID;
     }
 
     public String getISOCode() {
         if (item == null) return UNKNOWN_ID;
-        ResultList<RelatedTopic> nutsCodeValue = item.getRelatedTopics("org.deepamehta.wikidata.iso_country_code",
-                "dm4.core.parent", "dm4.core.child", "org.deepamehta.wikidata.text", 1);
-        return (nutsCodeValue.getSize() >= 1) ? nutsCodeValue.get(0).getSimpleValue().toString() : UNKNOWN_ID;
+        List<RelatedTopic> nutsCodeValue = item.getRelatedTopics("org.deepamehta.wikidata.iso_country_code",
+                "dm4.core.parent", "dm4.core.child", "org.deepamehta.wikidata.text");
+        return (nutsCodeValue.size() >= 1) ? nutsCodeValue.get(0).getSimpleValue().toString() : UNKNOWN_ID;
     }
     
     public String getUri() {

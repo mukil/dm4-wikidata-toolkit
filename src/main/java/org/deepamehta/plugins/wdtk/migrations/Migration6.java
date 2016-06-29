@@ -20,7 +20,7 @@ public class Migration6 extends Migration {
     @Override
     public void run() {
 
-        dms.getTopicType("org.deepamehta.wikidata.text").addIndexMode(IndexMode.FULLTEXT_KEY);
+        dm4.getTopicType("org.deepamehta.wikidata.text").addIndexMode(IndexMode.FULLTEXT_KEY);
 
     }
 

@@ -4,8 +4,7 @@ package org.deepamehta.plugins.wdtk;
 import de.deepamehta.core.RelatedAssociation;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.ResultList;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A very basic plugin to use the WDTK as a DeepaMehta 4 plugin and navigate topics by wikidata entity ids.
@@ -19,13 +18,13 @@ public interface WikidataToolkitService {
     
     Topic deleteAllWikidataTopics (long settingsTopicId);
 
-    ResultList<RelatedTopic> getRelatedTopics(String wikidataPropertyId, String wikidataItemId);
+    List<RelatedTopic> getRelatedTopics(String wikidataPropertyId, String wikidataItemId);
 
-    ArrayList<RelatedTopic> getSuperRelatedTopics(String wikidataPropertyId, String wikidataItemId,
+    List<RelatedTopic> getSuperRelatedTopics(String wikidataPropertyId, String wikidataItemId,
             String wikidataPropertyTwoId, String wikidataItemTwoId);
 
-    ResultList<RelatedAssociation> getRelatedAssociations(String wikidataPropertyId);
+    List<RelatedAssociation> getRelatedAssociations(String wikidataPropertyId);
 
-    ArrayList<RelatedAssociation> getRelatedAssociationsForItem(String wikidataPropertyId, String wikidataItemId);
+    List<RelatedAssociation> getRelatedAssociationsForItem(String wikidataPropertyId, String wikidataItemId);
     
 }

@@ -4,7 +4,6 @@ import de.deepamehta.core.Association;
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.ResultList;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -12,7 +11,6 @@ import org.deepamehta.plugins.wdtk.WikidataEntityMap;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,7 +37,7 @@ public class CountryItem implements JSONEnabled {
 
     public CountryItem (Topic topic) {
         this.code = topic;
-        this.item = topic.getRelatedTopic("org.deepamehta.wikidata.iso_country_code", "dm4.core.child", 
+        this.item = topic.getRelatedTopic("org.deepamehta.wikidata.iso_country_code", "dm4.core.child",
             "dm4.core.parent", "org.deepamehta.wikidata.item");
     }
 
@@ -50,9 +48,9 @@ public class CountryItem implements JSONEnabled {
     
     public String getOSMRelationId() {
         if (item == null) return UNKNOWN_ID;
-        ResultList<RelatedTopic> osmRelationIdValues = item.getRelatedTopics("org.deepamehta.wikidata.osm_relation_id", "dm4.core.parent", 
-            "dm4.core.child", "org.deepamehta.wikidata.text", 1);
-        return (osmRelationIdValues.getSize() >= 1) ? osmRelationIdValues.get(0).getSimpleValue().toString() : UNKNOWN_ID;
+        List<RelatedTopic> osmRelationIdValues = item.getRelatedTopics("org.deepamehta.wikidata.osm_relation_id", "dm4.core.parent", 
+            "dm4.core.child", "org.deepamehta.wikidata.text");
+        return (osmRelationIdValues.size() >= 1) ? osmRelationIdValues.get(0).getSimpleValue().toString() : UNKNOWN_ID;
     }
     
     public boolean isCountry() {
@@ -64,10 +62,9 @@ public class CountryItem implements JSONEnabled {
         List<Association> claims = this.item.getAssociations();
         for (Association claim : claims) {
             if (claim.getTypeUri().equals("org.deepamehta.wikidata.claim_edge")) {
-                claim.loadChildTopics("org.deepamehta.wikidata.property");
-                if (claim.getChildTopics().has("org.deepamehta.wikidata.property")) {
-                    Topic wikidataProperty = claim.getChildTopics().getTopic("org.deepamehta.wikidata.property");
-                    if (wikidataProperty.getUri().contains(WikidataEntityMap.CONTAINS_ADMIN_T_ENTITY)) {
+                Topic propertyTopic = claim.getChildTopics().getTopicOrNull("org.deepamehta.wikidata.property");
+                if (propertyTopic != null) {
+                    if (propertyTopic.getUri().contains(WikidataEntityMap.CONTAINS_ADMIN_T_ENTITY)) {
                         /** log.info("> wikidataClaim available about: \"" + claim.getPlayer1().getSimpleValue().toString() 
                                 + "\" being a territory contained in " + claim.getPlayer2().getSimpleValue().toString() + " or vice-versa"); **/
                         if (claim.getPlayer1().getId() == this.item.getId()) {
@@ -75,7 +72,7 @@ public class CountryItem implements JSONEnabled {
                         } else {
                             regions.add(new RegionItem(claim.getPlayer1()));
                         }
-                    } else if (wikidataProperty.getUri().contains(WikidataEntityMap.IS_LOCATED_IN_ADMIN_T)) {
+                    } else if (propertyTopic.getUri().contains(WikidataEntityMap.IS_LOCATED_IN_ADMIN_T)) {
                         log.info("> wikidataClaim available about: " + claim.getPlayer1().getSimpleValue().toString() 
                                 + " being a territory located in " + claim.getPlayer2().getSimpleValue().toString() + " or vice-versa");
                     }
@@ -91,10 +88,9 @@ public class CountryItem implements JSONEnabled {
         List<Association> claims = this.item.getAssociations();
         for (Association claim : claims) {
             if (claim.getTypeUri().equals("org.deepamehta.wikidata.claim_edge")) {
-                claim.loadChildTopics("org.deepamehta.wikidata.property");
-                if (claim.getChildTopics().has("org.deepamehta.wikidata.property")) {
-                    Topic wikidataProperty = claim.getChildTopics().getTopic("org.deepamehta.wikidata.property");
-                    if (wikidataProperty.getUri().contains(WikidataEntityMap.IS_COUNTRY)) { // IS_CAPITAL
+                Topic propertyTopic = claim.getChildTopics().getTopicOrNull("org.deepamehta.wikidata.property");
+                if (propertyTopic != null) {
+                    if (propertyTopic.getUri().contains(WikidataEntityMap.IS_COUNTRY)) { // IS_CAPITAL
                         if (!claim.getPlayer1().getUri().equals(this.item.getUri())) {
                             cities.add(new WikidataItem(claim.getPlayer1()));
                         } else if (!claim.getPlayer2().getUri().equals(this.item.getUri())) {

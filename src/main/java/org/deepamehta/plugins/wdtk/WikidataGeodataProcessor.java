@@ -1,11 +1,13 @@
 package org.deepamehta.plugins.wdtk;
 
 import de.deepamehta.core.Association;
+import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.*;
-import de.deepamehta.core.service.DeepaMehtaService;
+import de.deepamehta.core.service.CoreService;
+import de.deepamehta.core.service.ModelFactory;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.workspaces.WorkspacesService;
+import de.deepamehta.workspaces.WorkspacesService;
 import org.wikidata.wdtk.datamodel.interfaces.*;
 import org.wikidata.wdtk.datamodel.json.jackson.datavalues.JacksonValueTime;
 import org.wikidata.wdtk.util.Timer;
@@ -69,18 +71,19 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     // setting: language default value
     String isoLanguageCode = WikidataEntityMap.LANG_EN;
 
-    DeepaMehtaService dms;
+    CoreService dm4;
+    ModelFactory mf;
     WorkspacesService workspaceService;
     Topic wikidataWorkspace = null;
 
     DeepaMehtaTransaction tx = null;
     Date importStartedAt = null;
 
-    public WikidataGeodataProcessor (DeepaMehtaService dms, WorkspacesService workspaceService, int timeout,
+    public WikidataGeodataProcessor (CoreService dm4, ModelFactory mf, WorkspacesService workspaceService, int timeout,
         boolean persons, boolean institutions, boolean cities, boolean countries, boolean descriptions,
         boolean urls, boolean coordinates, String iso_lang) {
         this.timeout = timeout;
-        this.dms = dms;
+        this.dm4 = dm4;
         this.workspaceService = workspaceService;
         this.doCountries = countries;
         this.doCities = cities;
@@ -102,11 +105,11 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         countEntity();
 
         // Finish and create a new transaction for every 1000 items
-        if (tx == null) tx = dms.beginTx();
+        if (tx == null) tx = dm4.beginTx();
         if (this.entityCount % 1000 == 0) {
             tx.success();
             tx.finish();
-            tx = dms.beginTx();
+            tx = dm4.beginTx();
         }
         // 0) Get label and description of current item
         String itemId = itemDocument.getEntityId().getId();
@@ -467,17 +470,13 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
             printProcessingStatus();
         }
     }
-
-    private Topic getWikidataItemByEntityId (EntityIdValue id) {
-        return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id.getId()));
-    }
    
-    private Topic getWikidataItemByPropertyId (String propertyId) {
-        return dms.getTopic("uri", new SimpleValue(propertyId));
+    private Topic getWikidataItemByPropertyId (String propertyUri) {
+        return dm4.getTopicByUri(propertyUri);
     }
     
     private Topic getWikidataItemByEntityId (String id) {
-        return dms.getTopic("uri", new SimpleValue(WikidataEntityMap.WD_ENTITY_BASE_URI + id));
+        return dm4.getTopicByUri(WikidataEntityMap.WD_ENTITY_BASE_URI + id);
     }
 
     private String getItemLabel(ItemDocument itemDocument) {
@@ -529,9 +528,9 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         Topic item = null;
         try {
             TopicModel wikidataItemTopicModel = null;
-            wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
+            wikidataItemTopicModel = mf.newTopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
                 "org.deepamehta.wikidata.item");
-            item = dms.createTopic(wikidataItemTopicModel);
+            item = dm4.createTopic(wikidataItemTopicModel);
             if (item != null) {
                 // OK
                 workspaceService.assignToWorkspace(item, wikidataWorkspace.getId());
@@ -557,7 +556,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         } else {
             // ### if values for language code already exist, updates those otherwise
             // create and append values in new language code..
-            ChildTopicsModel languagedValueModel = new ChildTopicsModel();
+            ChildTopicsModel languagedValueModel = mf.newChildTopicsModel();
             //
             if (languageCode != null) {
                 languagedValueModel.putRef("org.deepamehta.wikidata.language_code", languageCode.getId());
@@ -572,8 +571,8 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     private void createWikidataItem(String itemId, String name, String alias, String description, Topic lang) {
         try {
             TopicModel wikidataItemTopicModel = null;
-            ChildTopicsModel wikidataEntityModel = new ChildTopicsModel();
-            ChildTopicsModel languagedValueModel = new ChildTopicsModel();
+            ChildTopicsModel wikidataEntityModel = mf.newChildTopicsModel();
+            ChildTopicsModel languagedValueModel = mf.newChildTopicsModel();
             if (lang != null) {
                 languagedValueModel.putRef("org.deepamehta.wikidata.language_code", lang.getId());
             } else {
@@ -591,14 +590,14 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
             }
             if (name != null || alias != null || description != null) {
                 wikidataEntityModel.add("org.deepamehta.wikidata.entity_value",
-                        new TopicModel("org.deepamehta.wikidata.entity_value", languagedValueModel));
-                wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
+                        mf.newTopicModel("org.deepamehta.wikidata.entity_value", languagedValueModel));
+                wikidataItemTopicModel = mf.newTopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
                         "org.deepamehta.wikidata.item", wikidataEntityModel);
             } else {
-                wikidataItemTopicModel = new TopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
+                wikidataItemTopicModel = mf.newTopicModel(WikidataEntityMap.WD_ENTITY_BASE_URI + itemId,
                         "org.deepamehta.wikidata.item");
             }
-            Topic wikidataTopic = dms.createTopic(wikidataItemTopicModel);
+            Topic wikidataTopic = dm4.createTopic(wikidataItemTopicModel);
             if (wikidataTopic != null) {
                 // OK
                 workspaceService.assignToWorkspace(wikidataTopic, wikidataWorkspace.getId());
@@ -612,16 +611,16 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
 
     private void updateWikidataItem (Topic item, String name, String alias, String description, ChildTopicsModel
             languageModel, String languageCode) {
-        if (item.getChildTopics().getModel().has("org.deepamehta.wikidata.entity_value")) {
-            List<RelatedTopicModel> existingValues;
-            existingValues = item.getModel().getChildTopicsModel().getTopics("org.deepamehta.wikidata.entity_value");
+        List<RelatedTopic> existingValues = item.getChildTopics().getTopicsOrNull("org.deepamehta.wikidata.entity_value");
+        if (existingValues != null) {
+            List<RelatedTopicModel> existingValuesModel = (List<RelatedTopicModel>) item.getModel().getChildTopicsModel().getTopicsOrNull("org.deepamehta.wikidata.entity_value");
             boolean existing = false;
-            for (TopicModel el : existingValues) {
+            for (TopicModel el : existingValuesModel) {
                 String existingLanguageValueCode = el.getChildTopicsModel().getString("org.deepamehta.wikidata.language_code");
                 if (existingLanguageValueCode.equals(languageCode)) {
                     existing = true;
                     // ## TODO: updating language based values during development
-                    /** DeepaMehtaTransaction tx = dms.beginTx();
+                    /** DeepaMehtaTransaction tx = dm4.beginTx();
                      // log.info("Updating existing values for language " + language_code + " and item " + itemId);
                      if (name != null) {
                      el.getChildTopicsModel().put("org.deepamehta.wikidata.label_value", name);
@@ -636,7 +635,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                      TopicModel existingItem = item.getModel();
                      existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
                      new TopicModel("org.deepamehta.wikidata.entity_value", el.getChildTopicsModel()));
-                     dms.updateTopic(existingItem);
+                     dm4.updateTopic(existingItem);
                      tx.success();
                      tx.finish();
                      break;
@@ -655,10 +654,11 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                     languageModel.put("org.deepamehta.wikidata.description_value", description);
                 }
                 if (name != null || alias != null || description != null) {
+                    // ChildTopicsModel updateModel =  new ChildTopicsModel();
                     TopicModel existingItem = item.getModel();
                     existingItem.getChildTopicsModel().add("org.deepamehta.wikidata.entity_value",
-                            new TopicModel("org.deepamehta.wikidata.entity_value", languageModel));
-                    dms.updateTopic(existingItem);
+                            mf.newTopicModel("org.deepamehta.wikidata.entity_value", languageModel));
+                    item.update(existingItem);
                 }
             }
         }
@@ -675,13 +675,13 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                     // log.info(" > Adding ASSIGNMENT existing Geo Coordinates to item " + itemId + " to " + coordinates);
                     /** TopicModel updatedItem = item.getModel();
                     updatedItem.getChildTopicsModel().addRef("dm4.geomaps.geo_coordinate", coordinatesTopic.getId());
-                    dms.updateTopic(updatedItem); **/
+                    dm4.updateTopic(updatedItem); **/
                     // tx.success();
                 // } else {
-                if (!item.getChildTopics().has("dm4.geomaps.geo_coordinate")) { // during dev we stick to one coordinate per item
+                if (item.getChildTopics().getTopicsOrNull("dm4.geomaps.geo_coordinate") == null) { // during dev we stick to one coordinate per item
                     try {
                         // log.info(" > Creating NEW Geo Coordinates for item " + itemId + " at " + coordinates);
-                        ChildTopicsModel geoCoordinates = new ChildTopicsModel();
+                        ChildTopicsModel geoCoordinates = mf.newChildTopicsModel();
                         /** Topic el = getLatitudeTopicByValue(coordinates[1]);
                         if (el != null) {
                             geoCoordinates.putRef("dm4.geomaps.latitude", el.getId());
@@ -694,10 +694,10 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                         } else { **/
                             geoCoordinates.put("dm4.geomaps.longitude", coordinates[0]);
                         // }
-                        TopicModel geoCoordinatesModel = new TopicModel("dm4.geomaps.geo_coordinate", geoCoordinates);
+                        TopicModel geoCoordinatesModel = mf.newTopicModel("dm4.geomaps.geo_coordinate", geoCoordinates);
                         TopicModel updatedItem = item.getModel();
                         updatedItem.getChildTopicsModel().put("dm4.geomaps.geo_coordinate", geoCoordinatesModel);
-                        dms.updateTopic(updatedItem);
+                        dm4.updateTopic(updatedItem);
                     } catch (Exception error) {
                         log.log(Level.SEVERE, "could not attach coordinates to item " + itemId, error);
                     }
@@ -709,8 +709,8 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
 
     // currently defused due to model change (geo-coordinates are one and composites of an item)
     /** private Topic getGeoCoordinateTopicByValue(double[] coordinates) {
-        Topic latitudeTopic = dms.getTopic("dm4.geomaps.latitude", new SimpleValue(coordinates[1]));
-        Topic longitudeTopic = dms.getTopic("dm4.geomaps.longitude", new SimpleValue(coordinates[0]));
+        Topic latitudeTopic = dm4.getTopic("dm4.geomaps.latitude", new SimpleValue(coordinates[1]));
+        Topic longitudeTopic = dm4.getTopic("dm4.geomaps.longitude", new SimpleValue(coordinates[0]));
         if (latitudeTopic != null && longitudeTopic != null) {
             RelatedTopic latitudeParent = latitudeTopic.getRelatedTopic("dm4.core.composition", "dm4.core.child",
                 "dm4.core.parent", "dm4.geomaps.geo_coordinate");
@@ -731,7 +731,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         // 0) fetch claim edge via uri (yet not possible with dm4-core)
         /** String statementGUID = s.getStatementId();
         log.info("Try to fetch assoc by statementUID " + statementGUID + " .... " );
-        Topic actuallyAssoc = dms.getTopic("uri", new Simp  leValue(statementGUID)); */
+        Topic actuallyAssoc = dm4.getTopic("uri", new Simp  leValue(statementGUID)); */
         // 1) store properties to claim edge
         List<SnakGroup> qualifierGroups = s.getClaim().getQualifiers();
         if (qualifierGroups.size() > 0) log.info("> Claim to qualify is " + claim.getUri() + " id: " + claim.getId());
@@ -781,26 +781,26 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     }
 
     /** ### see Ticket 804 private Topic getLatitudeTopicByValue(double value) {
-        return dms.getTopic("dm4.geomaps.latitude", new SimpleValue(value));
+        return dm4.getTopic("dm4.geomaps.latitude", new SimpleValue(value));
     }
 
     private Topic getLongitudeTopicByValue(double value) {
-        return dms.getTopic("dm4.geomaps.longitude", new SimpleValue(value));
+        return dm4.getTopic("dm4.geomaps.longitude", new SimpleValue(value));
     } **/
 
     private Topic getLanguageIsoCodeTopicByValue(String iso_code) {
         // ### TODO: These language value topics are only present when the dm4-wikidata module is also installed.
-        return dms.getTopic("org.deepamehta.wikidata.language_code", new SimpleValue(iso_code));
+        return dm4.getTopicByValue("org.deepamehta.wikidata.language_code", new SimpleValue(iso_code));
     }
 
     private Topic getWikidataTextTopic(String text_value) {
         if (text_value.contains("\"")) text_value = text_value.replaceAll("\"", "");
-        return dms.getTopic("org.deepamehta.wikidata.text", new SimpleValue(text_value));
+        return dm4.getTopicByValue("org.deepamehta.wikidata.text", new SimpleValue(text_value));
     }
 
     private Topic createWikidataTextTopic(String text_value) {
         if (text_value.contains("\"")) text_value = text_value.replaceAll("\"", "");
-        Topic countryCode = dms.createTopic(new TopicModel("org.deepamehta.wikidata.text", new SimpleValue(text_value)));
+        Topic countryCode = dm4.createTopic(mf.newTopicModel("org.deepamehta.wikidata.text", new SimpleValue(text_value)));
         return countryCode;
     }
 
@@ -812,12 +812,12 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     } **/
     
     /** private void createRelatedURLTopic(Topic topic, String url) {
-        DeepaMehtaTransaction tx = dms.beginTx();
+        DeepaMehtaTransaction tx = dm4.beginTx();
         try {
             TopicModel urlmodel = new TopicModel(DM_WEBBROWSER_URL, new SimpleValue(url));
-            Topic website = dms.createTopic(urlmodel);
+            Topic website = dm4.createTopic(urlmodel);
             if (website != null && topic != null) {
-                dms.createAssociation(new AssociationModel("dm4.core.association",
+                dm4.createAssociation(new AssociationModel("dm4.core.association",
                     new TopicRoleModel(topic.getId(), "dm4.core.parent"),
                     new TopicRoleModel(website.getId(), "dm4.core.child")));
                 workspaceService.assignToWorkspace(website, wikidataWorkspace.getId());
@@ -849,17 +849,17 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
             Topic propertyEntityTopic = getWikidataItemByPropertyId(propertyEntityId.getIri());
             ChildTopicsModel assocModel = null;
             if (propertyEntityTopic == null) { // do create new property entity topic
-                assocModel = new ChildTopicsModel()
-                    .put("org.deepamehta.wikidata.property", new TopicModel(
+                assocModel = mf.newChildTopicsModel()
+                    .put("org.deepamehta.wikidata.property", mf.newTopicModel(
                             propertyEntityId.getIri(), "org.deepamehta.wikidata.property"));
             } else {
-                assocModel = new ChildTopicsModel()
+                assocModel = mf.newChildTopicsModel()
                     .putRef("org.deepamehta.wikidata.property", propertyEntityTopic.getId());
             }
             try {
-                relation = dms.createAssociation(new AssociationModel(relationType,
-                        new TopicRoleModel(fromPlayer.getId(), "dm4.core.default"),
-                        new TopicRoleModel(wikidataItemTopic.getId(), "dm4.core.default"), assocModel));
+                relation = dm4.createAssociation(mf.newAssociationModel(relationType,
+                        mf.newTopicRoleModel(fromPlayer.getId(), "dm4.core.default"),
+                        mf.newTopicRoleModel(wikidataItemTopic.getId(), "dm4.core.default"), assocModel));
                 if (relation != null) {
                     relation.setUri(statementGUID);
                     log.fine("Created new \""+relationType+"\" relationship for " + fromPlayer.getUri()+
@@ -889,9 +889,9 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         }
         if (!hierarchicalAssociationAlreadyExists(fromPlayer.getId(), textTopic.getId(), relationType)) {
             try {
-                relation = dms.createAssociation(new AssociationModel(relationType,
-                        new TopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
-                        new TopicRoleModel(textTopic.getId(), "dm4.core.child")));
+                relation = dm4.createAssociation(mf.newAssociationModel(relationType,
+                        mf.newTopicRoleModel(fromPlayer.getId(), "dm4.core.parent"),
+                        mf.newTopicRoleModel(textTopic.getId(), "dm4.core.child")));
                 if (relation != null) {
                     relation.setUri(statementGUID);
                     log.fine("Created new \""+relationType+"\" relationship for " + fromPlayer.getUri()+
@@ -908,13 +908,13 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
     }
 
     private boolean associationAlreadyExists (long playerOne, long playerTwo, String assocTypeUri) {
-        Association assoc = dms.getAssociation(assocTypeUri, playerOne, playerTwo, "dm4.core.default", "dm4.core.default");
+        Association assoc = dm4.getAssociation(assocTypeUri, playerOne, playerTwo, "dm4.core.default", "dm4.core.default");
         if (assoc == null) return false;
         return true;
     }
     
     private boolean hierarchicalAssociationAlreadyExists (long parentId, long childId, String assocTypeUri) {
-        Association assoc = dms.getAssociation(assocTypeUri, parentId, childId, "dm4.core.parent", "dm4.core.child");
+        Association assoc = dm4.getAssociation(assocTypeUri, parentId, childId, "dm4.core.parent", "dm4.core.child");
         if (assoc == null) return false;
         return true;
     }
