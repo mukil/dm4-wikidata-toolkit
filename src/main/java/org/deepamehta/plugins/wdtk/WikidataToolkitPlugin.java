@@ -32,6 +32,9 @@ import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.Transactional;
 import de.deepamehta.accesscontrol.AccessControlService;
 import de.deepamehta.workspaces.WorkspacesService;
+import org.wikidata.wdtk.dumpfiles.DumpContentType;
+import org.wikidata.wdtk.dumpfiles.MwDumpFile;
+import org.wikidata.wdtk.dumpfiles.MwLocalDumpFile;
 
 
 
@@ -478,15 +481,17 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         // Controller object for processing dumps:
         DumpProcessingController dumpProcessingController = new DumpProcessingController("wikidatawiki");
         dumpProcessingController.setOfflineMode(noDownload);
+        List<MwDumpFile> availableJSONDumps = null;
+        String path = findDumpDirectoryPath();
         try {
-            String path = findDumpDirectoryPath();
             log.info("Searching for a wikidata (json) dump on your hard disk under " + path);
             dumpProcessingController.setDownloadDirectory(path);
-            /** List<MwDumpFile> availableJSONDumps = dumpProcessingController
+            availableJSONDumps = dumpProcessingController
                 .getWmfDumpFileManager().findAllDumps(DumpContentType.JSON);
-            if (availableJSONDumps == null) throw new RuntimeException("No JSON dumps "
-                + "to process availabe. Place a <date>.json.gz dumpfile in your filerepo "
-                + "under /dumpfiles/wikidatawiki/json-2014XXYY"); **/
+            if (availableJSONDumps.isEmpty()) {
+                log.warning("No JSON dumps to process availabe. Place a <date>.json.gz dumpfile in your filerepo "
+                + "directory under /dumpfiles/wikidatawiki/2014XXYY.json.gz");
+            }
         } catch (IOException ex) {
             log.warning("IOException: " + ex.getMessage());
             throw new RuntimeException(ex);
@@ -494,12 +499,17 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         dumpProcessingController.registerEntityDocumentProcessor(entityProcessor, null, false);
         try {
             isCurrentlyImporting = true;
-            dumpProcessingController.processMostRecentJsonDump();
+            if (availableJSONDumps.isEmpty()) {
+                MwDumpFile jsonDumpFile = new MwLocalDumpFile(path + "/dumpfiles/wikidatawiki/20160425.json.gz");
+                dumpProcessingController.processDump(jsonDumpFile);
+            } else {
+                dumpProcessingController.processMostRecentJsonDump();
+            }
         } catch (Exception e) {
-            isCurrentlyImporting = false;
             log.log(Level.SEVERE, "Let's see, if this is not a TimeoutException, what was catched then?", e);
             // The timer caused a time out or we could not find a dumpfile.
         }
+        isCurrentlyImporting = false;
         entityProcessor.stop();
     }
 

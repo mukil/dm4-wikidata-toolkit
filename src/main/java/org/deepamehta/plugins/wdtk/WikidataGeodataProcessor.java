@@ -84,6 +84,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
         boolean urls, boolean coordinates, String iso_lang) {
         this.timeout = timeout;
         this.dm4 = dm4;
+        this.mf = mf;
         this.workspaceService = workspaceService;
         this.doCountries = countries;
         this.doCities = cities;
@@ -678,7 +679,7 @@ public class WikidataGeodataProcessor implements EntityDocumentProcessor {
                     dm4.updateTopic(updatedItem); **/
                     // tx.success();
                 // } else {
-                if (item.getChildTopics().getTopicsOrNull("dm4.geomaps.geo_coordinate") == null) { // during dev we stick to one coordinate per item
+                if (item.getChildTopics().getTopicOrNull("dm4.geomaps.geo_coordinate") == null) { // during dev we stick to one coordinate per item
                     try {
                         // log.info(" > Creating NEW Geo Coordinates for item " + itemId + " at " + coordinates);
                         ChildTopicsModel geoCoordinates = mf.newChildTopicsModel();
