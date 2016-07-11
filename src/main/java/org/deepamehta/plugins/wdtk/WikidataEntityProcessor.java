@@ -85,6 +85,7 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
         boolean urls, boolean coordinates, String iso_lang) {
         this.timeout = timeout;
         this.dm4 = dm4;
+        this.mf = mf;
         this.workspaceService = workspaceService;
         this.doCountries = countries;
         this.doCities = cities;
@@ -360,8 +361,10 @@ public class WikidataEntityProcessor implements EntityDocumentProcessor {
                                 Topic entity = getWikidataItemByEntityId(nameId);
                                 if (entity != null) {
                                     HashMap<String, String> claim = new HashMap<String, String>();
-                                    claim.put("T" + entity.getId(), s.getStatementId() + WikidataEntityMap.URI_SEPERATOR + propertyId.getId());
-                                    citizenOf.put(itemDocument.getItemId().getId(), claim);
+                                    if (doPersons) {
+                                        claim.put("T" + entity.getId(), s.getStatementId() + WikidataEntityMap.URI_SEPERATOR + propertyId.getId());
+                                        citizenOf.put(itemDocument.getItemId().getId(), claim);
+                                    }
                                 } /** else {
                                     // check on all currently to be imported wikidata items (in memory)
                                     String relatedLabel = getItemLabelByEntityId(nameId);
