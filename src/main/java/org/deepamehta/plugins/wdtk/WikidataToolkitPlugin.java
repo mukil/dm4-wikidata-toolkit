@@ -459,6 +459,7 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         boolean descriptions = childs.getBoolean(WD_IMPORT_DESCRIPTIONS);
         boolean websites = childs.getBoolean(WD_IMPORT_WEBSITES);
         boolean geoCoordinates = childs.getBoolean(WD_IMPORT_COORDINATES);
+        // ### TODO: Allow users to configure which entityProcessor they want to execute/kickstart here.
         /** WikidataGeodataProcessor wikidataEntityProcessor = new WikidataGeodataProcessor(dm4, mf, wsService, timeOut,
                 persons, institutions, cities, countries, descriptions, websites, geoCoordinates, isoLanguageCode); **/
         WikidataEntityProcessor wikidataEntityProcessor = new WikidataEntityProcessor(dm4, mf, wsService, timeOut,
@@ -503,6 +504,8 @@ public class WikidataToolkitPlugin extends PluginActivator implements WikidataTo
         try {
             isCurrentlyImporting = true;
             if (availableJSONDumps.isEmpty()) {
+                // ### TODO: If the original issue (https://github.com/Wikidata/Wikidata-Toolkit/issues/232)
+                // is resolved, we can remove this. Test this.
                 MwDumpFile jsonDumpFile = new MwLocalDumpFile(path + "/dumpfiles/wikidatawiki/20160425.json.gz");
                 dumpProcessingController.processDump(jsonDumpFile);
             } else {
